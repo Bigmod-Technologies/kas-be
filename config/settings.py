@@ -212,7 +212,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SPECTACULAR_SETTINGS = {
     "TITLE": "KAS | API Documentation",
     "DESCRIPTION": "API description",
-    "VERSION": "1.0.1",
+    "VERSION": "1.0.2",
     "SERVE_INCLUDE_SCHEMA": False,
     # "SCHEMA_PATH_PREFIX_TRIM": False,
     "CAMELIZE_NAMES": True,
