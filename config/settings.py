@@ -147,7 +147,8 @@ if not CORS_ORIGIN_ALLOW_ALL:
         default="",
         cast=lambda v: [s.strip() for s in v.split(",") if s.strip()],
     )
-
+# CSRF Configuration
+CSRF_TRUSTED_ORIGINS = ALLOWED_HOSTS
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(days=1) if DEBUG else timedelta(minutes=60),
