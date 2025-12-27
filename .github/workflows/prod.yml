@@ -23,6 +23,8 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Navigate to the project directory
+            sudo chown -R $(whoami):$(whoami) /home/bmod/kas-be
+            
             cd /home/bmod/kas-be
             
 
