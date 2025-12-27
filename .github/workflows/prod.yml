@@ -23,4 +23,23 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Navigate to the project directory
-            pwd
+            cd /bmod/kas-be
+
+            # Pull the latest changes
+            git pull origin main
+
+            # Activate the virtual environment
+            source venv/bin/activate
+
+            # Install updated dependencies
+            pip install --upgrade pip
+            pip install -r requirement.txt
+
+            # Apply migrations
+            python manage.py migrate
+
+            # Restart the Gunicorn service
+            sudo systemctl restart kas.gunicorn
+
+            # Deactivate the virtual environment
+            deactivate
