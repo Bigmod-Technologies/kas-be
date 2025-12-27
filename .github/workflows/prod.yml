@@ -23,9 +23,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             # Navigate to the project directory
-            ls
-
-            pwd
+            cd /home/bmod/kas-be
             
 
             # Pull the latest changes
