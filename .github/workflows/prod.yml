@@ -24,7 +24,8 @@ jobs:
           script: |
             # Navigate to the project directory
             ls
-            # cd /kas-be
+            
+            cd /kas-be
 
             # Pull the latest changes
             # git pull origin main
