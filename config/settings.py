@@ -141,13 +141,15 @@ REST_AUTH = {
     "USE_JWT": True,
     "JWT_AUTH_HTTPONLY": False,
 }
-CORS_ORIGIN_ALLOW_ALL = config("CORS_ORIGIN_ALLOW_ALL", default=False, cast=bool)
-if not CORS_ORIGIN_ALLOW_ALL:
-    CORS_ALLOWED_ORIGINS = config(
-        "CORS_ALLOWED_ORIGINS",
-        default="",
-        cast=lambda v: [s.strip() for s in v.split(",") if s.strip()],
-    )
+# CORS_ORIGIN_ALLOW_ALL = config("CORS_ORIGIN_ALLOW_ALL", default=False, cast=bool)
+# if not CORS_ORIGIN_ALLOW_ALL:
+#     CORS_ALLOWED_ORIGINS = config(
+#         "CORS_ALLOWED_ORIGINS",
+#         default="",
+#         cast=lambda v: [s.strip() for s in v.split(",") if s.strip()],
+#     )
+
+CORS_ORIGIN_ALLOW_ALL = True
 # CSRF Configuration
 CSRF_TRUSTED_ORIGINS = config(
     "CSRF_TRUSTED_ORIGINS",
@@ -213,7 +215,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 SPECTACULAR_SETTINGS = {
     "TITLE": "KAS | API Documentation",
     "DESCRIPTION": "API description",
-    "VERSION": "1.0.1",
+    "VERSION": "1.0.2",
     "SERVE_INCLUDE_SCHEMA": False,
     # "SCHEMA_PATH_PREFIX_TRIM": False,
     "CAMELIZE_NAMES": True,
