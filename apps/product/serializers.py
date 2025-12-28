@@ -9,6 +9,9 @@ class BrandSerializer(serializers.ModelSerializer):
 
 
 class ProductSerializer(serializers.ModelSerializer):
+    brand_details = BrandSerializer(read_only=True, source="brand")
+
     class Meta:
         model = Product
         fields = "__all__"
+        read_only_fields = ("brand_details",)
