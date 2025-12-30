@@ -2,8 +2,8 @@ from rest_framework import viewsets, mixins, filters
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Brand, Product, Supplier
-from .serializers import BrandSerializer, ProductSerializer, SupplierSerializer
+from .models import Brand, Product, Supplier, Purchase
+from .serializers import BrandSerializer, ProductSerializer, SupplierSerializer, PurchaseSerializer
 
 from apps.core.utils import DefaultPagination
 
@@ -90,3 +90,30 @@ class SupplierViewSet(
     filterset_fields = ["status"]
     ordering_fields = ["brand_name", "created_at"]
     ordering = ["-created_at"]
+
+
+@extend_schema(tags=["Purchases"])
+class PurchaseViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    API endpoint that allows purchases to be viewed or edited.
+    Supports creating purchases with items in a single request.
+    """
+
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    queryset = Purchase.objects.select_related("supplier").prefetch_related("items__product").all()
+    serializer_class = PurchaseSerializer
+    pagination_class = DefaultPagination
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    search_fields = ["voucher_number", "supplier__brand_name", "note"]
+    filterset_fields = ["status", "supplier", "purchase_date"]
+    ordering_fields = ["purchase_date", "total_amount", "created_at"]
+    ordering = ["-purchase_date", "-created_at"]
