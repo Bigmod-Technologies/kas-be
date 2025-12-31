@@ -26,7 +26,7 @@ class StaffViewSet(
 
     http_method_names = ["get", "post", "patch", "delete"]
 
-    queryset = User.objects.select_related("profile").prefetch_related("groups").all()
+    queryset = User.objects.select_related("profile").prefetch_related("groups").exclude(is_superuser=True)
     serializer_class = StaffSerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
@@ -35,3 +35,13 @@ class StaffViewSet(
     filterset_fields = ["is_active", "groups"]
     ordering_fields = ["username", "email", "date_joined"]
     ordering = ["-date_joined"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.exclude(id=self.request.user.id)
+
+    def get_serializer_context(self):
+        """Ensure request is passed to serializer context"""
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context

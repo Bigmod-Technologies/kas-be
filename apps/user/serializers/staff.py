@@ -1,3 +1,4 @@
+from gc import set_debug
 import secrets
 import string
 from rest_framework import serializers
@@ -7,7 +8,7 @@ from apps.user.models import Profile
 
 
 class ProfileSerializer(serializers.ModelSerializer):
-    """Serializer for Profile model"""
+    profile_picture = serializers.ImageField(required=False)
 
     class Meta:
         model = Profile
@@ -16,8 +17,16 @@ class ProfileSerializer(serializers.ModelSerializer):
             "phone_number": {"required": False},
             "nid": {"required": False},
             "dob": {"required": False},
-            "profile_picture": {"required": False},
         }
+
+    def to_representation(self, instance):
+        """Override to return full URL for profile_picture"""
+        representation = super().to_representation(instance)
+        if representation.get('profile_picture'):
+            request = self.context.get('request')
+            if request:
+                representation['profile_picture'] = request.build_absolute_uri(representation['profile_picture'])
+        return representation
 
 
 class GroupSerializer(serializers.ModelSerializer):
@@ -138,7 +147,7 @@ class StaffSerializer(serializers.ModelSerializer):
         
         # Add profile data
         if hasattr(instance, "profile"):
-            profile_serializer = ProfileSerializer(instance.profile)
+            profile_serializer = ProfileSerializer(instance.profile, context=self.context)
             representation["profile"] = profile_serializer.data
         else:
             representation["profile"] = None
