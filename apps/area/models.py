@@ -7,4 +7,11 @@ class Zone(BaseModel):
 
     name = models.CharField(max_length=255, unique=True)
     is_archive = models.BooleanField(default=False)
-    
+
+    class Meta:
+        verbose_name = "Zone"
+        verbose_name_plural = "Zones"
+        ordering = ["name"]
+
+    def __str__(self):
+        return self.name
