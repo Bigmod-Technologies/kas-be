@@ -66,7 +66,7 @@ class ProductSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create product and automatically create associated price if provided"""
-        price_data = validated_data.pop("price", None)
+        price_data = validated_data.pop("latest_product_price", None)
 
         # Create the product
         product = Product.objects.create(**validated_data)

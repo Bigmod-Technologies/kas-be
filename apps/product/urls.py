@@ -4,7 +4,7 @@ from .views import BrandViewSet, ProductViewSet, SupplierViewSet, PurchaseViewSe
 
 router = DefaultRouter()
 router.register(r"brands", BrandViewSet)
-router.register(r"products", ProductViewSet)
+router.register(r"items", ProductViewSet)
 router.register(r"suppliers", SupplierViewSet)
 router.register(r"purchases", PurchaseViewSet)
 

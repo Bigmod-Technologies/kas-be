@@ -2,7 +2,9 @@ from rest_framework import viewsets, mixins, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
+from django.db.models import ProtectedError
 
 from .models import Brand, Product, Supplier, Purchase
 from .serializers import (
@@ -11,6 +13,7 @@ from .serializers import (
     SupplierSerializer,
     PurchaseSerializer,
     SkuGenerateSerializer,
+    VoucherNumberGenerateSerializer,
 )
 
 from apps.core.utils import DefaultPagination
@@ -46,6 +49,24 @@ class BrandViewSet(
 
     ordering = ["-name"]
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Override destroy to handle ProtectedError and format it properly for drf_standardized_errors.
+        """
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError as e:
+            # Get the protected objects information
+            protected_objects = list(e.protected_objects)
+            if protected_objects:
+                model_name = protected_objects[0].__class__._meta.verbose_name_plural
+                raise ValidationError(
+                    {
+                        "detail": f"Cannot delete this brand because it is referenced by {len(protected_objects)} {model_name}."
+                    }
+                )
+            raise ValidationError({"detail": "Cannot delete this brand because it is referenced by other objects."})
+
 
 @extend_schema(tags=["Products"])
 class ProductViewSet(
@@ -72,6 +93,24 @@ class ProductViewSet(
 
     ordering_fields = ["name"]
     ordering = ["-name"]
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Override destroy to handle ProtectedError and format it properly for drf_standardized_errors.
+        """
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError as e:
+            # Get the protected objects information
+            protected_objects = list(e.protected_objects)
+            if protected_objects:
+                model_name = protected_objects[0].__class__._meta.verbose_name_plural
+                raise ValidationError(
+                    {
+                        "detail": f"Cannot delete this product because it is referenced by {len(protected_objects)} {model_name}."
+                    }
+                )
+            raise ValidationError({"detail": "Cannot delete this product because it is referenced by other objects."})
 
     @extend_schema(
         summary="Generate SKU number",
@@ -113,6 +152,24 @@ class SupplierViewSet(
     ordering_fields = ["brand_name", "created_at"]
     ordering = ["-created_at"]
 
+    def destroy(self, request, *args, **kwargs):
+        """
+        Override destroy to handle ProtectedError and format it properly for drf_standardized_errors.
+        """
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError as e:
+            # Get the protected objects information
+            protected_objects = list(e.protected_objects)
+            if protected_objects:
+                model_name = protected_objects[0].__class__._meta.verbose_name_plural
+                raise ValidationError(
+                    {
+                        "detail": f"Cannot delete this supplier because it is referenced by {len(protected_objects)} {model_name}."
+                    }
+                )
+            raise ValidationError({"detail": "Cannot delete this supplier because it is referenced by other objects."})
+
 
 @extend_schema(tags=["Purchases"])
 class PurchaseViewSet(
@@ -139,3 +196,35 @@ class PurchaseViewSet(
     filterset_fields = ["status", "supplier", "purchase_date"]
     ordering_fields = ["purchase_date", "total_amount", "created_at"]
     ordering = ["-purchase_date", "-created_at"]
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        Override destroy to handle ProtectedError and format it properly for drf_standardized_errors.
+        """
+        try:
+            return super().destroy(request, *args, **kwargs)
+        except ProtectedError as e:
+            # Get the protected objects information
+            protected_objects = list(e.protected_objects)
+            if protected_objects:
+                model_name = protected_objects[0].__class__._meta.verbose_name_plural
+                raise ValidationError(
+                    {
+                        "detail": f"Cannot delete this purchase because it is referenced by {len(protected_objects)} {model_name}."
+                    }
+                )
+            raise ValidationError({"detail": "Cannot delete this purchase because it is referenced by other objects."})
+
+    @extend_schema(
+        summary="Generate voucher number",
+        description="Generate a unique voucher number for a new purchase",
+        responses={200: VoucherNumberGenerateSerializer},
+    )
+    @action(detail=False, methods=["get"], serializer_class=VoucherNumberGenerateSerializer, url_path="generate-voucher-number")
+    def generate_voucher_number(self, request):
+        """
+        Generate a unique voucher number.
+        Returns a unique voucher number in the format: PAY-YYYY-0001 (PAY prefix, year, followed by sequential number)
+        """
+        serializer = self.get_serializer(None)
+        return Response(serializer.to_representation(None))

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from apps.product.models import Purchase, PurchaseItem, PurchaseStatus
 from apps.product.serializers import SupplierSerializer
+from apps.product.utils import generate_voucher_number
 
 
 class PurchaseItemSerializer(serializers.ModelSerializer):
@@ -212,3 +213,18 @@ class PurchaseSerializer(serializers.ModelSerializer):
                 PurchaseItem.objects.create(purchase=instance, **item_data)
 
         return instance
+
+
+class VoucherNumberGenerateSerializer(serializers.Serializer):
+    """
+    Serializer for generating unique voucher numbers.
+    Uses the generate_voucher_number utility function for voucher number generation logic.
+    """
+    voucher_number = serializers.CharField(read_only=True)
+
+    def to_representation(self, instance):
+        """
+        Override to generate and return the voucher number using the utility function.
+        """
+        voucher_number = generate_voucher_number()
+        return {"voucher_number": voucher_number}

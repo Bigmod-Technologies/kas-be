@@ -1,5 +1,5 @@
 from django.contrib import admin
-from apps.product.models import Brand, Product, ProductPrice, Supplier
+from apps.product.models import Brand, Product, ProductPrice, Supplier, Purchase, PurchaseItem
 
 
 # Register your models here.
@@ -63,3 +63,30 @@ class SupplierAdmin(admin.ModelAdmin):
     search_fields = ["brand_name", "representative_name", "registration_number"]
     list_filter = ["status", "created_at"]
     readonly_fields = ["id", "created_at", "updated_at"]
+
+
+class PurchaseItemInline(admin.TabularInline):
+    model = PurchaseItem
+    extra = 0
+    fields = ["product", "quantity", "unit", "unit_price", "total_price", "created_at"]
+    readonly_fields = ["total_price", "created_at"]
+    raw_id_fields = ["product"]
+
+
+@admin.register(Purchase)
+class PurchaseAdmin(admin.ModelAdmin):
+    list_display = [
+        "voucher_number",
+        "supplier",
+        "purchase_date",
+        "total_amount",
+        "paid_amount",
+        "due_amount",
+        "status",
+        "created_at",
+    ]
+    search_fields = ["voucher_number", "supplier__brand_name"]
+    list_filter = ["status", "purchase_date", "created_at"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    raw_id_fields = ["supplier"]
+    inlines = [PurchaseItemInline]
