@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from apps.product.models import Brand, Product, ProductPrice, PriceFor
+from apps.product.utils import generate_sku
 
 
 class BrandSerializer(serializers.ModelSerializer):
@@ -106,3 +107,18 @@ class ProductSerializer(serializers.ModelSerializer):
                 ProductPrice.objects.create(product=instance, **price_data)
 
         return instance
+
+
+class SkuGenerateSerializer(serializers.Serializer):
+    """
+    Serializer for generating unique SKU numbers.
+    Uses the generate_sku utility function for SKU generation logic.
+    """
+    sku = serializers.CharField(read_only=True)
+
+    def to_representation(self, instance):
+        """
+        Override to generate and return the SKU using the utility function.
+        """
+        sku = generate_sku()
+        return {"sku": sku}

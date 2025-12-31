@@ -1,9 +1,17 @@
 from rest_framework import viewsets, mixins, filters
+from rest_framework.decorators import action
+from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Brand, Product, Supplier, Purchase
-from .serializers import BrandSerializer, ProductSerializer, SupplierSerializer, PurchaseSerializer
+from .serializers import (
+    BrandSerializer,
+    ProductSerializer,
+    SupplierSerializer,
+    PurchaseSerializer,
+    SkuGenerateSerializer,
+)
 
 from apps.core.utils import DefaultPagination
 
@@ -64,6 +72,20 @@ class ProductViewSet(
 
     ordering_fields = ["name"]
     ordering = ["-name"]
+
+    @extend_schema(
+        summary="Generate SKU number",
+        description="Generate a unique SKU number for a new product",
+        responses={200: SkuGenerateSerializer},
+    )
+    @action(detail=False, methods=["get"], serializer_class=SkuGenerateSerializer, url_path="generate-sku")
+    def generate_sku(self, request):
+        """
+        Generate a unique SKU number.
+        Returns a unique SKU in the format: SKU-{YYYYMMDD}-{random_hex}
+        """
+        serializer = self.get_serializer(None)
+        return Response(serializer.to_representation(None))
 
 
 @extend_schema(tags=["Suppliers"])
