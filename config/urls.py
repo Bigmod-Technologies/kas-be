@@ -31,6 +31,7 @@ urlpatterns = [
     path("product/", include("apps.product.urls")),
     path("user/", include("apps.user.urls")),
     path("inventory/", include("apps.inventory.urls")),
+    path("crm/", include("apps.crm.urls")),
     # Optional UI:
     path("schema/", SpectacularAPIView.as_view(), name="schema"),
     path("", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
