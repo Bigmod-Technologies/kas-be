@@ -1,10 +1,15 @@
-from gc import set_debug
 import secrets
 import string
 from rest_framework import serializers
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.password_validation import validate_password
 from apps.user.models import Profile
+
+
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "email", "first_name", "last_name"]
 
 
 class ProfileSerializer(serializers.ModelSerializer):
@@ -22,10 +27,12 @@ class ProfileSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Override to return full URL for profile_picture"""
         representation = super().to_representation(instance)
-        if representation.get('profile_picture'):
-            request = self.context.get('request')
+        if representation.get("profile_picture"):
+            request = self.context.get("request")
             if request:
-                representation['profile_picture'] = request.build_absolute_uri(representation['profile_picture'])
+                representation["profile_picture"] = request.build_absolute_uri(
+                    representation["profile_picture"]
+                )
         return representation
 
 
@@ -144,10 +151,12 @@ class StaffSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """Customize representation to include profile"""
         representation = super().to_representation(instance)
-        
+
         # Add profile data
         if hasattr(instance, "profile"):
-            profile_serializer = ProfileSerializer(instance.profile, context=self.context)
+            profile_serializer = ProfileSerializer(
+                instance.profile, context=self.context
+            )
             representation["profile"] = profile_serializer.data
         else:
             representation["profile"] = None
@@ -157,4 +166,3 @@ class StaffSerializer(serializers.ModelSerializer):
             representation["generated_password"] = instance.generated_password
 
         return representation
-

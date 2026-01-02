@@ -15,3 +15,15 @@ class Zone(BaseModel):
 
     def __str__(self):
         return self.name
+
+    @property
+    def customers(self):
+        from apps.crm.models import Customer
+
+        return Customer.objects.filter(zone=self)
+
+    @property
+    def staff(self):
+        from apps.user.models import User
+
+        return User.objects.filter(profile__zone=self)

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from apps.core.models import BaseModel
 from django_resized import ResizedImageField
+from apps.area.models import Zone
 
 
 class Profile(BaseModel):
@@ -18,6 +19,9 @@ class Profile(BaseModel):
         upload_to="profile_pictures/",
         blank=True,
         null=True,
+    )
+    zone = models.ForeignKey(
+        Zone, on_delete=models.PROTECT, related_name="profiles", null=True, blank=True
     )
 
     def __str__(self):
