@@ -59,12 +59,12 @@ class OrderItemSerializer(serializers.ModelSerializer):
         net_ctn = obj.quantity_in_ctn + obj.advanced_in_ctn - obj.damaged_in_ctn
         net_pcs = obj.quantity_in_pcs + obj.advanced_in_pcs - obj.damaged_in_pcs
 
-        # Calculate amount for cartons
-        if obj.price.ctn_price and net_ctn > 0:
+        # Calculate amount for cartons (handles both positive and negative net quantities)
+        if obj.price.ctn_price and net_ctn != 0:
             total += Decimal(str(net_ctn)) * obj.price.ctn_price
 
-        # Calculate amount for pieces
-        if obj.price.piece_price and net_pcs > 0:
+        # Calculate amount for pieces (handles both positive and negative net quantities)
+        if obj.price.piece_price and net_pcs != 0:
             total += Decimal(str(net_pcs)) * obj.price.piece_price
 
         return total
@@ -109,7 +109,6 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             "customer",
             "customer_details",
             "total_amount",
-            "commission_in_percentage",
             "items",
             "items_data",
             "created_at",
@@ -157,12 +156,12 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             - item_data.get("damaged_in_pcs", 0)
         )
 
-        # Calculate amount for cartons
-        if price.ctn_price and net_ctn > 0:
+        # Calculate amount for cartons (handles both positive and negative net quantities)
+        if price.ctn_price and net_ctn != 0:
             total += Decimal(str(net_ctn)) * price.ctn_price
 
-        # Calculate amount for pieces
-        if price.piece_price and net_pcs > 0:
+        # Calculate amount for pieces (handles both positive and negative net quantities)
+        if price.piece_price and net_pcs != 0:
             total += Decimal(str(net_pcs)) * price.piece_price
 
         return total

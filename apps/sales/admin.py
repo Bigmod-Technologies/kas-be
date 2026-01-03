@@ -33,7 +33,6 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         "order_by",
         "customer",
         "total_amount",
-        "commission_in_percentage",
         "items_count",
         "created_at",
     ]
@@ -79,7 +78,6 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         ("Financial", {
             "fields": (
                 "total_amount",
-                "commission_in_percentage",
             )
         }),
         ("Timestamps", {

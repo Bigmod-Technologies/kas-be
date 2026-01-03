@@ -17,7 +17,7 @@ class Product(BaseModel):
     status = models.CharField(
         max_length=50, choices=Status.choices, default=Status.PENDING
     )
-    sku = models.CharField(max_length=150)
+    sku = models.CharField(max_length=150, unique=True)
     buy_qty = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     free_qty = models.IntegerField(default=0)
 

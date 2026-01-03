@@ -33,9 +33,10 @@ class OrderDelivery(BaseModel):
         related_name="customer_orders",
         help_text="Customer who placed the order",
     )
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2)
-    commission_in_percentage = models.DecimalField(
-        max_digits=12, decimal_places=2, default=Decimal("0.00")
+    total_amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2,
+        help_text="Total amount (can be negative for returns/refunds)"
     )
 
     class Meta:
@@ -113,12 +114,12 @@ class OrderItem(BaseModel):
         net_ctn = self.quantity_in_ctn + self.advanced_in_ctn - self.damaged_in_ctn
         net_pcs = self.quantity_in_pcs + self.advanced_in_pcs - self.damaged_in_pcs
 
-        # Calculate amount for cartons
-        if self.price.ctn_price and net_ctn > 0:
+        # Calculate amount for cartons (handles both positive and negative net quantities)
+        if self.price.ctn_price and net_ctn != 0:
             total += Decimal(str(net_ctn)) * self.price.ctn_price
 
-        # Calculate amount for pieces
-        if self.price.piece_price and net_pcs > 0:
+        # Calculate amount for pieces (handles both positive and negative net quantities)
+        if self.price.piece_price and net_pcs != 0:
             total += Decimal(str(net_pcs)) * self.price.piece_price
 
         return total
