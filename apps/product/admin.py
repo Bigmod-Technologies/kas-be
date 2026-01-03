@@ -24,10 +24,11 @@ class ProductPriceInline(admin.TabularInline):
 
 @admin.register(Product)
 class ProductAdmin(admin.ModelAdmin):
-    list_display = ["name", "brand", "sku", "have_offer", "status", "created_at"]
+    list_display = ["name", "brand", "sku", "buy_qty", "free_qty", "have_offer", "status", "created_at"]
     search_fields = ["name", "sku"]
     list_filter = ["status", "brand", "have_offer", "created_at"]
     readonly_fields = ["id", "created_at", "updated_at"]
+    fields = ["name", "brand", "sku", "buy_qty", "free_qty", "have_offer", "status", "id", "created_at", "updated_at"]
     inlines = [ProductPriceInline]
 
 

@@ -57,6 +57,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "have_offer",
             "status",
             "sku",
+            "buy_qty",
+            "free_qty",
             "price",
             "prices",
             "created_at",
