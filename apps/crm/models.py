@@ -1,3 +1,4 @@
+from email.policy import default
 from django.db import models
 from apps.core.models import BaseModel
 from apps.area.models import Zone
@@ -20,6 +21,9 @@ class Customer(BaseModel):
         help_text="Zone/area where the customer is located",
     )
     due_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    order_discount_in_persentage = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0.00
+    )
 
     class Meta:
         verbose_name = "Customer"
