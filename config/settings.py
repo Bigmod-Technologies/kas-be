@@ -57,6 +57,10 @@ INSTALLED_APPS = [
     "apps.core",
     "apps.user",
     "apps.product",
+    "apps.inventory",
+    "apps.crm",
+    "apps.area",
+    "apps.sales",
 ]
 
 MIDDLEWARE = [

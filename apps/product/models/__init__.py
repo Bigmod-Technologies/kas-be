@@ -1,3 +1,5 @@
 from .brand import *
 from .product import *
-# from .suplier import *
+from .price import *
+from .suplier import *
+from .purchase import *
