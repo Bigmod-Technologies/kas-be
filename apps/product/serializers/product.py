@@ -32,12 +32,14 @@ class ProductPriceWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductPrice
         fields = [
+            "id",
             "price_for",
             "ctn_size",
             "ctn_price",
             "piece_price",
             "offer_price",
         ]
+        read_only_fields = ("id",)
 
 
 class ProductSerializer(serializers.ModelSerializer):

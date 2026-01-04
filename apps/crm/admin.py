@@ -11,6 +11,9 @@ class CustomerAdmin(admin.ModelAdmin):
         'zone',
         'opening_balance',
         'due_limit',
+        'order_discount_in_persentage',
+        'have_special_discount',
+        'special_discount_in_persentage',
         'created_at'
     ]
     list_filter = [
@@ -30,7 +33,10 @@ class CustomerAdmin(admin.ModelAdmin):
             'fields': ('name', 'shop_name', 'contact_number', 'address')
         }),
         ('Financial Information', {
-            'fields': ('opening_balance', 'due_limit')
+            'fields': ('opening_balance', 'due_limit', 'order_discount_in_persentage')
+        }),
+        ('Discount Information', {
+            'fields': ('have_special_discount', 'special_discount_in_persentage')
         }),
         ('Location', {
             'fields': ('zone',)

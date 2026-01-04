@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from apps.sales.models import OrderDelivery, OrderItem
+from apps.sales.models import OrderDelivery, OrderItem, SalesCollection, CollectionItem
 
 
 class OrderItemInline(admin.TabularInline):
@@ -199,3 +199,215 @@ class OrderItemAdmin(admin.ModelAdmin):
             )
         return "-"
     damaged_display.short_description = "Damaged"
+
+
+class CollectionItemInline(admin.TabularInline):
+    """Inline admin for CollectionItem in SalesCollection admin"""
+    
+    model = CollectionItem
+    extra = 0
+    fields = [
+        "product",
+        "price",
+        ("order_cnt_qtn", "order_pcs_qtn"),
+        ("damage_cnt_qtn", "damage_pcs_qtn"),
+        ("free_cnt_qtn", "free_pcs_qtn"),
+        "total_order_amount",
+        "total_damage_amount",
+        "total_free_amount",
+    ]
+    readonly_fields = ["total_order_amount", "total_damage_amount", "total_free_amount"]
+    raw_id_fields = ["product", "price"]
+    verbose_name = "Collection Item"
+    verbose_name_plural = "Collection Items"
+
+
+@admin.register(SalesCollection)
+class SalesCollectionAdmin(admin.ModelAdmin):
+    """Admin interface for SalesCollection model"""
+    
+    list_display = [
+        "sales_id",
+        "sales_date",
+        "sales_by",
+        "customer",
+        "total_sale",
+        "collection_amount",
+        "due_amount",
+        "items_count",
+        "created_at",
+    ]
+    list_display_links = ["sales_id"]
+    search_fields = [
+        "sales_id",
+        "sales_by__username",
+        "sales_by__email",
+        "customer__name",
+        "customer__shop_name",
+    ]
+    list_filter = [
+        "sales_date",
+        "created_at",
+        "sales_by",
+        "customer",
+    ]
+    readonly_fields = [
+        "id",
+        "sales_id",
+        "created_at",
+        "updated_at",
+    ]
+    raw_id_fields = ["sales_by", "customer"]
+    inlines = [CollectionItemInline]
+    date_hierarchy = "sales_date"
+    ordering = ["-sales_date", "-sales_id"]
+    
+    fieldsets = (
+        ("Sales Information", {
+            "fields": (
+                "id",
+                "sales_id",
+                "sales_date",
+            )
+        }),
+        ("Relations", {
+            "fields": (
+                "sales_by",
+                "customer",
+            )
+        }),
+        ("Financial", {
+            "fields": (
+                "total_sale",
+                "commission_in_percentage",
+                "special_discount_in_percentage",
+                "deduction_percentage",
+                "collection_amount",
+                "collection_by_personal_loan",
+                "due_amount",
+            )
+        }),
+        ("Timestamps", {
+            "fields": (
+                "created_at",
+                "updated_at",
+            ),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def items_count(self, obj):
+        """Display the count of items in the collection"""
+        count = obj.items.count()
+        return format_html(
+            '<span style="font-weight: bold;">{}</span>',
+            count
+        )
+    items_count.short_description = "Items"
+
+
+@admin.register(CollectionItem)
+class CollectionItemAdmin(admin.ModelAdmin):
+    """Admin interface for CollectionItem model"""
+    
+    list_display = [
+        "sales",
+        "product",
+        "order_quantity_display",
+        "damaged_display",
+        "free_display",
+        "total_order_amount",
+        "total_damage_amount",
+        "total_free_amount",
+        "created_at",
+    ]
+    list_display_links = ["sales", "product"]
+    search_fields = [
+        "sales__sales_id",
+        "product__name",
+        "product__sku",
+    ]
+    list_filter = [
+        "sales__sales_date",
+        "created_at",
+        "sales__customer",
+    ]
+    readonly_fields = [
+        "id",
+        "total_order_amount",
+        "total_damage_amount",
+        "total_free_amount",
+        "created_at",
+        "updated_at",
+    ]
+    raw_id_fields = ["sales", "product", "price"]
+    ordering = ["-created_at", "-sales"]
+    
+    fieldsets = (
+        ("Sales Collection Information", {
+            "fields": (
+                "id",
+                "sales",
+            )
+        }),
+        ("Product & Price", {
+            "fields": (
+                "product",
+                "price",
+            )
+        }),
+        ("Quantities", {
+            "fields": (
+                ("order_cnt_qtn", "order_pcs_qtn"),
+                ("damage_cnt_qtn", "damage_pcs_qtn"),
+                ("free_cnt_qtn", "free_pcs_qtn"),
+            )
+        }),
+        ("Financial", {
+            "fields": (
+                "total_order_amount",
+                "total_damage_amount",
+                "total_free_amount",
+            )
+        }),
+        ("Timestamps", {
+            "fields": (
+                "created_at",
+                "updated_at",
+            ),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def order_quantity_display(self, obj):
+        """Display order quantity in a formatted way"""
+        if obj.order_cnt_qtn or obj.order_pcs_qtn:
+            return format_html(
+                '<span>CTN: <strong>{}</strong> | PCS: <strong>{}</strong></span>',
+                obj.order_cnt_qtn,
+                obj.order_pcs_qtn
+            )
+        return "-"
+    order_quantity_display.short_description = "Order Quantity"
+    
+    def damaged_display(self, obj):
+        """Display damaged quantity in a formatted way"""
+        if obj.damage_cnt_qtn or obj.damage_pcs_qtn:
+            return format_html(
+                '<span style="color: red;">CTN: <strong>{}</strong> | PCS: <strong>{}</strong></span>',
+                obj.damage_cnt_qtn,
+                obj.damage_pcs_qtn
+            )
+        return "-"
+    damaged_display.short_description = "Damaged"
+    
+    def free_display(self, obj):
+        """Display free quantity in a formatted way"""
+        if obj.free_cnt_qtn or obj.free_pcs_qtn:
+            return format_html(
+                '<span style="color: green;">CTN: <strong>{}</strong> | PCS: <strong>{}</strong></span>',
+                obj.free_cnt_qtn,
+                obj.free_pcs_qtn
+            )
+        return "-"
+    free_display.short_description = "Free"

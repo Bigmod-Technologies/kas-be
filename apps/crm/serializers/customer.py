@@ -17,6 +17,9 @@ class CustomerSerializer(serializers.ModelSerializer):
             "zone",
             "zone_name",
             "due_limit",
+            "order_discount_in_persentage",
+            "have_special_discount",
+            "special_discount_in_persentage",
             "created_at",
             "updated_at",
         ]

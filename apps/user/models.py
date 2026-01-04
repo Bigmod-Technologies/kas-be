@@ -23,6 +23,9 @@ class Profile(BaseModel):
     zone = models.ForeignKey(
         Zone, on_delete=models.PROTECT, related_name="profiles", null=True, blank=True
     )
+    sales_commission_in_percentage = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0.00
+    )
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

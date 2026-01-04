@@ -80,3 +80,80 @@ def generate_order_number():
     final_number = (next_number + 1) if (next_number + 1) <= 9999 else 1
     return f"ORD-{current_year}-{final_number:04d}"
 
+
+def generate_sales_id():
+    """
+    Generate a unique sequential sales collection ID.
+    Returns a unique sales ID formatted with SAL prefix, year, and leading zeros (e.g., SAL-2025-0001, SAL-2025-0002, SAL-2025-0557, ...)
+    """
+    try:
+        # Import here to avoid circular import
+        from apps.sales.models import SalesCollection
+    except AppRegistryNotReady:
+        # Return a temporary number if apps aren't ready (e.g., during migrations)
+        return f"SAL-{datetime.now().year}-0001"
+    
+    # Get current year
+    current_year = datetime.now().year
+    
+    try:
+        # Get all existing sales IDs for current year
+        existing_sales = SalesCollection.objects.values_list('sales_id', flat=True).exclude(sales_id__isnull=True).exclude(sales_id='')
+        
+        # Filter sales that start with SAL-{current_year}
+        sal_year_prefix = f"SAL-{current_year}"
+        current_year_sales = [s for s in existing_sales if str(s).startswith(sal_year_prefix)]
+    except Exception:
+        # If database is not ready (e.g., during migrations), return a default number
+        return f"SAL-{current_year}-0001"
+    
+    if not current_year_sales:
+        # No existing sales IDs for current year, start from 1
+        next_number = 1
+    else:
+        # Extract sequential numbers from current year sales
+        numbers = []
+        for sales_id in current_year_sales:
+            # Extract number after the SAL-YYYY prefix (format: SAL-YYYY-0001)
+            # Match pattern: SAL-YYYY-NNNN where NNNN is the sequential number
+            match = re.search(rf'^SAL-{re.escape(str(current_year))}-(\d+)$', str(sales_id))
+            if match:
+                numbers.append(int(match.group(1)))
+        
+        if numbers:
+            # Get the maximum number and increment
+            next_number = max(numbers) + 1
+        else:
+            # No matching format found, start from 1
+            next_number = 1
+    
+    # Format with SAL prefix, year, and leading zeros (4 digits: SAL-2025-0001, SAL-2025-0002, etc.)
+    sales_id = f"SAL-{current_year}-{next_number:04d}"
+    
+    # Ensure uniqueness (in case of race condition)
+    try:
+        max_attempts = 100
+        for attempt in range(max_attempts):
+            if not SalesCollection.objects.filter(sales_id=sales_id).exists():
+                return sales_id
+            # If exists, increment and try again
+            next_number += 1
+            sales_id = f"SAL-{current_year}-{next_number:04d}"
+        
+        # Fallback: if all attempts fail (extremely rare), use timestamp-based number
+        # Extract last 4 digits of timestamp to maintain format consistency
+        timestamp = int(datetime.now().timestamp())
+        fallback_number = (timestamp % 9999) + 1  # Range: 1-9999 to avoid 0000
+        fallback_sales_id = f"SAL-{current_year}-{fallback_number:04d}"
+        
+        # Check if fallback is unique
+        if not SalesCollection.objects.filter(sales_id=fallback_sales_id).exists():
+            return fallback_sales_id
+    except Exception:
+        # If database is not ready, return the calculated number anyway
+        return sales_id
+    
+    # Last resort: increment next_number once more (it was last checked value that existed)
+    # Ensure it wraps around properly if it exceeds 9999
+    final_number = (next_number + 1) if (next_number + 1) <= 9999 else 1
+    return f"SAL-{current_year}-{final_number:04d}"

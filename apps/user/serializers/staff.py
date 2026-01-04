@@ -17,11 +17,20 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ["phone_number", "nid", "dob", "profile_picture"]
+        fields = [
+            "phone_number",
+            "nid",
+            "dob",
+            "profile_picture",
+            "zone",
+            "sales_commission_in_percentage",
+        ]
         extra_kwargs = {
             "phone_number": {"required": False},
             "nid": {"required": False},
             "dob": {"required": False},
+            "zone": {"required": False},
+            "sales_commission_in_percentage": {"required": False},
         }
 
     def to_representation(self, instance):

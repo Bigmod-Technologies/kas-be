@@ -24,6 +24,10 @@ class Customer(BaseModel):
     order_discount_in_persentage = models.DecimalField(
         max_digits=12, decimal_places=2, default=0.00
     )
+    have_special_discount = models.BooleanField(default=False)
+    special_discount_in_persentage = models.DecimalField(
+        max_digits=12, decimal_places=2, default=0.00
+    )
 
     class Meta:
         verbose_name = "Customer"
