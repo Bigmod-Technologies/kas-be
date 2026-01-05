@@ -185,20 +185,11 @@ class SalesCollectionSerializer(serializers.ModelSerializer):
         free_cnt_qtn = item_data.get("free_cnt_qtn", 0) or 0
         free_pcs_qtn = item_data.get("free_pcs_qtn", 0) or 0
 
-        free_base = Decimal("0.00")
+        free_amount = Decimal("0.00")
         if price.ctn_price is not None and free_cnt_qtn:
-            free_base += Decimal(str(price.ctn_price)) * Decimal(str(free_cnt_qtn))
+            free_amount += Decimal(str(price.ctn_price)) * Decimal(str(free_cnt_qtn))
         if price.piece_price is not None and free_pcs_qtn:
-            free_base += Decimal(str(price.piece_price)) * Decimal(str(free_pcs_qtn))
-
-        # Apply deduction percentage to free
-        if sales_collection and sales_collection.deduction_percentage:
-            deduction_rate = Decimal(str(sales_collection.deduction_percentage)) / Decimal(
-                "100.00"
-            )
-            free_amount = free_base * (Decimal("1.00") - deduction_rate)
-        else:
-            free_amount = free_base
+            free_amount += Decimal(str(price.piece_price)) * Decimal(str(free_pcs_qtn))
 
         total -= free_amount
 
