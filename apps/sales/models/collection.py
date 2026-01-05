@@ -86,6 +86,43 @@ class SalesCollection(BaseModel):
             from apps.sales.utils import generate_sales_id
 
             self.sales_id = generate_sales_id()
+
+        # Copy commission from user profile if available
+        if self.sales_by and hasattr(self.sales_by, "profile"):
+            if (
+                self.sales_by.profile
+                and self.sales_by.profile.sales_commission_in_percentage
+            ):
+                self.commission_in_percentage = (
+                    self.sales_by.profile.sales_commission_in_percentage
+                )
+
+        # If customer has special discount, copy it from customer
+        if self.customer and self.customer.have_special_discount:
+            self.special_discount_in_percentage = (
+                self.customer.special_discount_in_persentage
+            )
+
+        # Calculate total after applying special discount
+        total_sale_decimal = Decimal(str(self.total_sale))
+        special_discount_decimal = Decimal(str(self.special_discount_in_percentage))
+
+        # Apply special discount: total_amount - (total_amount * discount_percentage / 100)
+        if special_discount_decimal > 0:
+            discount_amount = total_sale_decimal * (
+                special_discount_decimal / Decimal("100.00")
+            )
+            total_after_discount = total_sale_decimal - discount_amount
+        else:
+            total_after_discount = total_sale_decimal
+
+        # Calculate due amount: total_after_discount - collection_amount - collection_by_personal_loan
+        self.due_amount = (
+            total_after_discount
+            - Decimal(str(self.collection_amount))
+            - Decimal(str(self.collection_by_personal_loan))
+        )
+
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -175,23 +212,15 @@ class CollectionItem(BaseModel):
             return Decimal("0.00")
 
         # Calculate base free amount
-        base_total = Decimal("0.00")
+        total = Decimal("0.00")
         if self.price.ctn_price:
-            base_total += Decimal(str(self.price.ctn_price)) * Decimal(
+            total += Decimal(str(self.price.ctn_price)) * Decimal(
                 str(self.free_cnt_qtn)
             )
         if self.price.piece_price:
-            base_total += Decimal(str(self.price.piece_price)) * Decimal(
+            total += Decimal(str(self.price.piece_price)) * Decimal(
                 str(self.free_pcs_qtn)
             )
-
-        # Apply deduction percentage from sales collection
-        if self.sales and self.sales.deduction_percentage:
-            deduction_rate = Decimal(str(self.sales.deduction_percentage)) / Decimal(
-                "100.00"
-            )
-            total = base_total * (Decimal("1.00") - deduction_rate)
-        else:
-            total = base_total
-
         return total
+
+
