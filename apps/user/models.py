@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from apps.core.models import BaseModel
 from django_resized import ResizedImageField
-from apps.area.models import Zone
+from apps.area.models import Area
 
 
 class Profile(BaseModel):
@@ -20,12 +20,13 @@ class Profile(BaseModel):
         blank=True,
         null=True,
     )
-    zone = models.ForeignKey(
-        Zone, on_delete=models.PROTECT, related_name="profiles", null=True, blank=True
-    )
+
     sales_commission_in_percentage = models.DecimalField(
         max_digits=12, decimal_places=2, default=0.00
     )
+    areas = models.ManyToManyField(Area, related_name="profiles_areas")
+    monthly_salary = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+
 
     def __str__(self):
         return f"{self.user.username}'s Profile"

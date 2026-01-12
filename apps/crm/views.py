@@ -25,19 +25,22 @@ class CustomerViewSet(
 
     http_method_names = ["get", "post", "patch", "delete"]
 
-    queryset = Customer.objects.select_related("zone").all()
+    queryset = Customer.objects.select_related("area", "area__zone").all()
     serializer_class = CustomerSerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     search_fields = [
+        "customer_id",
         "name",
         "shop_name",
         "contact_number",
         "address",
     ]
     filterset_fields = [
-        "zone",
+        "area",
+        "fridge_type",
+        "have_special_discount",
     ]
     ordering_fields = ["name", "shop_name", "created_at"]
     ordering = ["name"]

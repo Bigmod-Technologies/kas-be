@@ -1,7 +1,11 @@
-from email.policy import default
 from django.db import models
 from apps.core.models import BaseModel
-from apps.area.models import Zone
+from apps.area.models import Area
+
+
+class CustomerType(models.TextChoices):
+    PDF = "PDF", "PDF"
+    ODF = "ODF", "ODF"
 
 
 class Customer(BaseModel):
@@ -12,13 +16,13 @@ class Customer(BaseModel):
     contact_number = models.CharField(max_length=50, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     opening_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
-    zone = models.ForeignKey(
-        Zone,
+    area = models.ForeignKey(
+        Area,
         on_delete=models.PROTECT,
         related_name="customers",
         null=True,
         blank=True,
-        help_text="Zone/area where the customer is located",
+        help_text="Area where the customer is located",
     )
     due_limit = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
     order_discount_in_persentage = models.DecimalField(
@@ -27,6 +31,10 @@ class Customer(BaseModel):
     have_special_discount = models.BooleanField(default=False)
     special_discount_in_persentage = models.DecimalField(
         max_digits=12, decimal_places=2, default=0.00
+    )
+    customer_id = models.CharField(max_length=255, null=True, blank=True)
+    fridge_type = models.CharField(
+        max_length=50, choices=CustomerType.choices, null=True, blank=True
     )
 
     class Meta:

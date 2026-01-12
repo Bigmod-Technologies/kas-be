@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from apps.area.models import Zone
-from apps.crm.serializers import CustomerSerializer
-from apps.user.serializers import UserSerializer
+from apps.area.serializers.area import AreaSerializer
 
 
 class ZoneSerializer(serializers.ModelSerializer):
-    customers = CustomerSerializer(many=True, read_only=True)
-    staff = UserSerializer(many=True, read_only=True)
+    areas_display = AreaSerializer(many=True, read_only=True, source="areas")
+    # customers = CustomerSerializer(many=True, read_only=True)
+    # staff = UserSerializer(many=True, read_only=True)
 
     class Meta:
         model = Zone
@@ -14,9 +14,8 @@ class ZoneSerializer(serializers.ModelSerializer):
             "id",
             "name",
             "is_archive",
-            "customers",
-            "staff",
+            "areas_display",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ("id", "customers", "created_at", "updated_at")
+        read_only_fields = ("id", "areas_display", "created_at", "updated_at")

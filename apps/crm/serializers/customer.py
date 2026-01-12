@@ -1,21 +1,24 @@
 from rest_framework import serializers
 from apps.crm.models import Customer
+from apps.area.serializers.area import AreaSerializer
 
 
 class CustomerSerializer(serializers.ModelSerializer):
-    zone_name = serializers.CharField(source="zone.name", read_only=True)
+    area_details = AreaSerializer(source="area", read_only=True)
     
     class Meta:
         model = Customer
         fields = [
             "id",
+            "customer_id",
             "name",
             "shop_name",
             "contact_number",
             "address",
             "opening_balance",
-            "zone",
-            "zone_name",
+            "area",
+            "area_details",
+            "fridge_type",
             "due_limit",
             "order_discount_in_persentage",
             "have_special_discount",
@@ -23,5 +26,5 @@ class CustomerSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ("id", "zone_name", "created_at", "updated_at")
+        read_only_fields = ("id", "area_details", "created_at", "updated_at")
 
