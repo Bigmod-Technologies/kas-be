@@ -54,6 +54,10 @@ class ProfileSerializer(serializers.ModelSerializer):
                 representation["profile_picture"] = request.build_absolute_uri(
                     representation["profile_picture"]
                 )
+        
+        # Use areas_display for output, remove areas (IDs) from representation
+        if "areas_display" in representation:
+            representation["areas"] = representation.pop("areas_display")
 
         return representation
 
@@ -83,7 +87,7 @@ class StaffSerializer(serializers.ModelSerializer):
         validators=[validate_password],
         help_text="If not provided, a random password will be generated",
     )
-    generated_password = serializers.CharField(read_only=True)
+
 
     class Meta:
         model = User
@@ -128,7 +132,7 @@ class StaffSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         """Create staff with profile and assign groups"""
-        profile_data = validated_data.pop("profile", {})
+        profile_data = validated_data.pop("profile", None)
         groups_data = validated_data.pop("groups", [])
         password = validated_data.pop("password", None)
         generated_password = None
@@ -147,25 +151,34 @@ class StaffSerializer(serializers.ModelSerializer):
         if groups_data:
             staff.groups.set(groups_data)
 
-        # Handle areas in profile data
-        areas_data = profile_data.pop("areas", None)
+        # Handle profile creation if profile data is provided
+        if profile_data is not None and profile_data:
+            # Handle areas in profile data (ManyToMany field) - must be popped before creating profile
+            areas_data = profile_data.pop("areas", None)
+            
+            # Get or create profile (signal may have already created it)
+            profile, created = Profile.objects.get_or_create(user=staff)
+            
+            # Update all fields from profile_data
+            # The nested serializer should have already validated the data
+            for key, value in profile_data.items():
+                if hasattr(profile, key):
+                    setattr(profile, key, value)
+            profile.save()
 
-        # Create or update profile
-        profile, _ = Profile.objects.update_or_create(user=staff, defaults=profile_data)
+            # Assign areas if provided (ManyToMany must be set after profile is saved)
+            if areas_data is not None:
+                profile.areas.set(areas_data)
+            
+            # # Refresh from database to ensure all data is loaded
+            # profile.refresh_from_db()
 
-        # Assign areas if provided
-        if areas_data is not None:
-            profile.areas.set(areas_data)
-
-        # Store generated password for response
-        if generated_password:
-            staff.generated_password = generated_password
 
         return staff
 
     def update(self, instance, validated_data):
         """Update staff and profile"""
-        profile_data = validated_data.pop("profile", {})
+        profile_data = validated_data.pop("profile", None)
         groups_data = validated_data.pop("groups", None)
         password = validated_data.pop("password", None)
 
@@ -183,14 +196,23 @@ class StaffSerializer(serializers.ModelSerializer):
         if groups_data is not None:
             instance.groups.set(groups_data)
 
-        # Handle areas in profile data
-        areas_data = profile_data.pop("areas", None)
-
-        # Update profile
-        if profile_data or areas_data is not None:
-            profile, _ = Profile.objects.update_or_create(
-                user=instance, defaults=profile_data
-            )
+        # Handle profile update if profile data is provided
+        if profile_data is not None:
+            # Handle areas in profile data (ManyToMany field)
+            areas_data = profile_data.pop("areas", None)
+            
+            # Get or create profile
+            profile, _ = Profile.objects.get_or_create(user=instance)
+            
+            # Update all fields from profile_data
+            # Empty strings should be converted to None for nullable fields
+            for key, value in profile_data.items():
+                if value == "":
+                    # Convert empty strings to None for nullable fields
+                    setattr(profile, key, None)
+                else:
+                    setattr(profile, key, value)
+            profile.save()
 
             # Update areas if provided
             if areas_data is not None:
@@ -211,9 +233,6 @@ class StaffSerializer(serializers.ModelSerializer):
         else:
             representation["profile"] = None
 
-        # Add generated password if it exists (only for create operations)
-        if hasattr(instance, "generated_password") and instance.generated_password:
-            representation["generated_password"] = instance.generated_password
 
         # Use groups_display for output, remove groups (IDs) from representation
         if "groups_display" in representation:
