@@ -4,6 +4,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.password_validation import validate_password
 from apps.user.models import Profile
+from apps.area.models import Area
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -13,7 +14,16 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    from apps.area.serializers import AreaSerializer
+
     profile_picture = serializers.ImageField(required=False)
+    areas = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Area.objects.all(),
+        required=False,
+        help_text="List of area IDs to assign to the profile",
+    )
+    areas_display = AreaSerializer(source="areas", many=True, read_only=True)
 
     class Meta:
         model = Profile
@@ -22,19 +32,21 @@ class ProfileSerializer(serializers.ModelSerializer):
             "nid",
             "dob",
             "profile_picture",
-            "zone",
+            "areas",
+            "areas_display",
             "sales_commission_in_percentage",
+            "monthly_salary",
         ]
         extra_kwargs = {
             "phone_number": {"required": False},
             "nid": {"required": False},
             "dob": {"required": False},
-            "zone": {"required": False},
             "sales_commission_in_percentage": {"required": False},
+            "monthly_salary": {"required": False},
         }
 
     def to_representation(self, instance):
-        """Override to return full URL for profile_picture"""
+        """Override to return full URL for profile_picture and show areas details"""
         representation = super().to_representation(instance)
         if representation.get("profile_picture"):
             request = self.context.get("request")
@@ -42,6 +54,7 @@ class ProfileSerializer(serializers.ModelSerializer):
                 representation["profile_picture"] = request.build_absolute_uri(
                     representation["profile_picture"]
                 )
+
         return representation
 
 
@@ -57,7 +70,13 @@ class StaffSerializer(serializers.ModelSerializer):
     """Serializer for Staff with Profile"""
 
     profile = ProfileSerializer(required=False)
-    groups = GroupSerializer(many=True, read_only=True)
+    groups = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Group.objects.all(),
+        required=False,
+        help_text="List of group IDs to assign to the staff",
+    )
+    groups_display = GroupSerializer(source="groups", many=True, read_only=True)
     password = serializers.CharField(
         write_only=True,
         required=False,
@@ -77,11 +96,12 @@ class StaffSerializer(serializers.ModelSerializer):
             "password",
             "generated_password",
             "groups",
+            "groups_display",
             "profile",
             "date_joined",
             "is_active",
         ]
-        read_only_fields = ["id", "date_joined", "generated_password", "groups"]
+        read_only_fields = ["id", "date_joined", "generated_password", "groups_display"]
         extra_kwargs = {
             "email": {"required": False},
             "first_name": {"required": False},
@@ -107,8 +127,9 @@ class StaffSerializer(serializers.ModelSerializer):
         return "".join(password_list)
 
     def create(self, validated_data):
-        """Create staff with profile and assign to both Salesman and Delivery man groups"""
+        """Create staff with profile and assign groups"""
         profile_data = validated_data.pop("profile", {})
+        groups_data = validated_data.pop("groups", [])
         password = validated_data.pop("password", None)
         generated_password = None
 
@@ -122,13 +143,19 @@ class StaffSerializer(serializers.ModelSerializer):
         staff.set_password(password)
         staff.save()
 
-        # Assign staff to both groups by default
-        salesman_group, _ = Group.objects.get_or_create(name="Salesman")
-        delivery_man_group, _ = Group.objects.get_or_create(name="Delivery man")
-        staff.groups.add(salesman_group, delivery_man_group)
+        # Assign groups if provided
+        if groups_data:
+            staff.groups.set(groups_data)
+
+        # Handle areas in profile data
+        areas_data = profile_data.pop("areas", None)
 
         # Create or update profile
-        Profile.objects.update_or_create(user=staff, defaults=profile_data)
+        profile, _ = Profile.objects.update_or_create(user=staff, defaults=profile_data)
+
+        # Assign areas if provided
+        if areas_data is not None:
+            profile.areas.set(areas_data)
 
         # Store generated password for response
         if generated_password:
@@ -139,6 +166,7 @@ class StaffSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         """Update staff and profile"""
         profile_data = validated_data.pop("profile", {})
+        groups_data = validated_data.pop("groups", None)
         password = validated_data.pop("password", None)
 
         # Update staff fields
@@ -151,9 +179,22 @@ class StaffSerializer(serializers.ModelSerializer):
 
         instance.save()
 
+        # Update groups if provided
+        if groups_data is not None:
+            instance.groups.set(groups_data)
+
+        # Handle areas in profile data
+        areas_data = profile_data.pop("areas", None)
+
         # Update profile
-        if profile_data:
-            Profile.objects.update_or_create(user=instance, defaults=profile_data)
+        if profile_data or areas_data is not None:
+            profile, _ = Profile.objects.update_or_create(
+                user=instance, defaults=profile_data
+            )
+
+            # Update areas if provided
+            if areas_data is not None:
+                profile.areas.set(areas_data)
 
         return instance
 
@@ -173,5 +214,9 @@ class StaffSerializer(serializers.ModelSerializer):
         # Add generated password if it exists (only for create operations)
         if hasattr(instance, "generated_password") and instance.generated_password:
             representation["generated_password"] = instance.generated_password
+
+        # Use groups_display for output, remove groups (IDs) from representation
+        if "groups_display" in representation:
+            representation["groups"] = representation.pop("groups_display")
 
         return representation

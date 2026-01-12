@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from apps.area.models import Zone
 from apps.crm.serializers import CustomerSerializer
-from apps.user.serializers import UserSerializer
+from apps.user.serializers.staff import UserSerializer
 
 
 class ZoneSerializer(serializers.ModelSerializer):

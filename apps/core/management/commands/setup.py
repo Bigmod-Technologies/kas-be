@@ -1,42 +1,65 @@
 from django.core.management.base import BaseCommand
+from django.contrib.auth.models import Group
 from apps.area.models import WorkingDay
 
 
 class Command(BaseCommand):
-    help = 'Set up default data including 7 days of the week in WorkingDay model'
+    help = "Set up default data including 7 days of the week in WorkingDay model and user groups"
 
     def handle(self, *args, **options):
-        """Set up 7 days of the week in WorkingDay model"""
+        """Set up 7 days of the week in WorkingDay model and user groups"""
+
+        # Setup Working Days
+        self.stdout.write(self.style.SUCCESS("\n=== Setting up Working Days ==="))
         days_of_week = [
-            'Monday',
-            'Tuesday',
-            'Wednesday',
-            'Thursday',
-            'Friday',
-            'Saturday',
-            'Sunday'
+            "Monday",
+            "Tuesday",
+            "Wednesday",
+            "Thursday",
+            "Friday",
+            "Saturday",
+            "Sunday",
         ]
-        
-        created_count = 0
-        existing_count = 0
-        
+
+        working_days_created = 0
+        working_days_existing = 0
+
         for day_name in days_of_week:
             working_day, created = WorkingDay.objects.get_or_create(name=day_name)
             if created:
-                created_count += 1
-                self.stdout.write(
-                    self.style.SUCCESS(f'✓ Created: {day_name}')
-                )
+                working_days_created += 1
+                self.stdout.write(self.style.SUCCESS(f"✓ Created: {day_name}"))
             else:
-                existing_count += 1
-                self.stdout.write(
-                    self.style.WARNING(f'→ Already exists: {day_name}')
-                )
-        
+                working_days_existing += 1
+                self.stdout.write(self.style.WARNING(f"→ Already exists: {day_name}"))
+
+        # Setup Groups
+        self.stdout.write(self.style.SUCCESS("\n=== Setting up User Groups ==="))
+        groups = [
+            "Delivery man",
+            "Salesman",
+            "Manager",
+            "Accountant",
+            "Director",
+        ]
+
+        groups_created = 0
+        groups_existing = 0
+
+        for group_name in groups:
+            group, created = Group.objects.get_or_create(name=group_name)
+            if created:
+                groups_created += 1
+                self.stdout.write(self.style.SUCCESS(f"✓ Created: {group_name}"))
+            else:
+                groups_existing += 1
+                self.stdout.write(self.style.WARNING(f"→ Already exists: {group_name}"))
+
+        # Summary
         self.stdout.write(
             self.style.SUCCESS(
-                f'\nSetup complete! Created {created_count} new working days, '
-                f'{existing_count} already existed.'
+                f"\n=== Setup Complete ===\n"
+                f"Working Days: Created {working_days_created} new, {working_days_existing} already existed.\n"
+                f"Groups: Created {groups_created} new, {groups_existing} already existed."
             )
         )
-
