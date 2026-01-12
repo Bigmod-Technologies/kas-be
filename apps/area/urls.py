@@ -4,7 +4,7 @@ from .views import ZoneViewSet, AreaViewSet
 
 router = DefaultRouter()
 router.register(r"zones", ZoneViewSet)
-router.register(r"areas", AreaViewSet)
+router.register(r"routes", AreaViewSet)
 
 urlpatterns = [
     path("", include(router.urls)),
