@@ -98,14 +98,13 @@ class StaffSerializer(serializers.ModelSerializer):
             "first_name",
             "last_name",
             "password",
-            "generated_password",
             "groups",
             "groups_display",
             "profile",
             "date_joined",
             "is_active",
         ]
-        read_only_fields = ["id", "date_joined", "generated_password", "groups_display"]
+        read_only_fields = ["id", "date_joined", "groups_display"]
         extra_kwargs = {
             "email": {"required": False},
             "first_name": {"required": False},
