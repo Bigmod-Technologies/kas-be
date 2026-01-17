@@ -27,3 +27,6 @@ class Product(BaseModel):
     @property
     def latest_product_price(self):
         return self.prices.filter(is_latest=True, price_for="PRODUCT").first()
+    
+
+

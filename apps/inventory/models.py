@@ -121,16 +121,25 @@ class StockTransaction(BaseModel):
         null=True,
         help_text="Batch number for this transaction",
     )
-    unit_price = models.DecimalField(
+    ctn_price = models.DecimalField(
         max_digits=10,
         decimal_places=2,
         default=0,
-        help_text="Unit price for this transaction",
+        help_text="Carton price for this transaction",
+    )
+    piece_price = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Piece price for this transaction",
     )
 
     @property
     def total_price(self) -> Decimal:
-        return self.unit_price * (self.ctn_quantity + self.piece_quantity)
+        """Calculate total price: (ctn_price * ctn_quantity) + (piece_price * piece_quantity)"""
+        ctn_total = Decimal(self.ctn_price) * Decimal(self.ctn_quantity)
+        piece_total = Decimal(self.piece_price) * Decimal(self.piece_quantity)
+        return ctn_total + piece_total
 
     class Meta:
         verbose_name = "Stock Transaction"

@@ -18,7 +18,8 @@ class StockTransactionAdmin(admin.ModelAdmin):
         'transaction_type',
         'ctn_quantity',
         'piece_quantity',
-        'unit_price',
+        'ctn_price',
+        'piece_price',
         'total_price',
         'have_transfer',
         'transfer_from',
@@ -41,7 +42,7 @@ class StockTransactionAdmin(admin.ModelAdmin):
     readonly_fields = ['total_price', 'created_at', 'updated_at']
     fieldsets = (
         ('Transaction Details', {
-            'fields': ('stock_type', 'product', 'transaction_type', 'ctn_quantity', 'piece_quantity', 'unit_price', 'total_price')
+            'fields': ('stock_type', 'product', 'transaction_type', 'ctn_quantity', 'piece_quantity', 'ctn_price', 'piece_price', 'total_price')
         }),
         ('Transfer Information', {
             'fields': ('have_transfer', 'transfer_from', 'transfer_to'),
