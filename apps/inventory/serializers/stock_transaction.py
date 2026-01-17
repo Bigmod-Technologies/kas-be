@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from apps.inventory.models import StockTransaction, StockType
-from apps.product.models import Product, ProductPrice
-from apps.product.serializers import ProductSerializer, ProductPriceSerializer
+from apps.product.serializers import ProductSerializer
 
 
 class StockTypeNestedSerializer(serializers.ModelSerializer):
@@ -15,7 +14,6 @@ class StockTypeNestedSerializer(serializers.ModelSerializer):
 class StockTransactionSerializer(serializers.ModelSerializer):
     stock_type_details = StockTypeNestedSerializer(read_only=True, source="stock_type")
     product_details = ProductSerializer(read_only=True, source="product")
-    price_details = ProductPriceSerializer(read_only=True, source="price")
     transfer_from_details = StockTypeNestedSerializer(read_only=True, source="transfer_from")
     transfer_to_details = StockTypeNestedSerializer(read_only=True, source="transfer_to")
     
@@ -27,17 +25,18 @@ class StockTransactionSerializer(serializers.ModelSerializer):
             "stock_type_details",
             "product",
             "product_details",
-            "price",
-            "price_details",
             "transaction_type",
             "ctn_quantity",
             "piece_quantity",
+            "unit_price",
+            "total_price",
             "have_transfer",
             "transfer_from",
             "transfer_from_details",
             "transfer_to",
             "transfer_to_details",
             "note",
+            "batch_number",
             "created_at",
             "updated_at",
         ]
@@ -45,9 +44,9 @@ class StockTransactionSerializer(serializers.ModelSerializer):
             "id",
             "stock_type_details",
             "product_details",
-            "price_details",
             "transfer_from_details",
             "transfer_to_details",
+            "total_price",
             "created_at",
             "updated_at",
         )

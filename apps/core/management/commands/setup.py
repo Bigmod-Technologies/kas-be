@@ -1,13 +1,14 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import Group
 from apps.area.models import WorkingDay
+from apps.inventory.models import StockType
 
 
 class Command(BaseCommand):
-    help = "Set up default data including 7 days of the week in WorkingDay model and user groups"
+    help = "Set up default data including 7 days of the week in WorkingDay model, user groups, and stock types"
 
     def handle(self, *args, **options):
-        """Set up 7 days of the week in WorkingDay model and user groups"""
+        """Set up 7 days of the week in WorkingDay model, user groups, and stock types"""
 
         # Setup Working Days
         self.stdout.write(self.style.SUCCESS("\n=== Setting up Working Days ==="))
@@ -55,11 +56,34 @@ class Command(BaseCommand):
                 groups_existing += 1
                 self.stdout.write(self.style.WARNING(f"→ Already exists: {group_name}"))
 
+        # Setup Stock Types
+        self.stdout.write(self.style.SUCCESS("\n=== Setting up Stock Types ==="))
+        stock_types = [
+            "Main Stock",
+            "Regular Stock",
+            "Free Stock",
+            "Damage Stock",
+            "Advance Stock",
+        ]
+
+        stock_types_created = 0
+        stock_types_existing = 0
+
+        for stock_type_name in stock_types:
+            stock_type, created = StockType.objects.get_or_create(name=stock_type_name)
+            if created:
+                stock_types_created += 1
+                self.stdout.write(self.style.SUCCESS(f"✓ Created: {stock_type_name}"))
+            else:
+                stock_types_existing += 1
+                self.stdout.write(self.style.WARNING(f"→ Already exists: {stock_type_name}"))
+
         # Summary
         self.stdout.write(
             self.style.SUCCESS(
                 f"\n=== Setup Complete ===\n"
                 f"Working Days: Created {working_days_created} new, {working_days_existing} already existed.\n"
-                f"Groups: Created {groups_created} new, {groups_existing} already existed."
+                f"Groups: Created {groups_created} new, {groups_existing} already existed.\n"
+                f"Stock Types: Created {stock_types_created} new, {stock_types_existing} already existed."
             )
         )
