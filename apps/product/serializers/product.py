@@ -49,6 +49,9 @@ class ProductSerializer(serializers.ModelSerializer):
         required=True, allow_null=True, source="latest_product_price"
     )
 
+    total_ctn_quantity = serializers.IntegerField(read_only=True)
+    total_piece_quantity = serializers.IntegerField(read_only=True)
+
     class Meta:
         model = Product
         fields = [
@@ -61,12 +64,22 @@ class ProductSerializer(serializers.ModelSerializer):
             "sku",
             "buy_qty",
             "free_qty",
+            "total_ctn_quantity",
+            "total_piece_quantity",
             "price",
             "prices",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ("id", "brand_details", "prices", "created_at", "updated_at")
+        read_only_fields = (
+            "id",
+            "brand_details",
+            "prices",
+            "total_ctn_quantity",
+            "total_piece_quantity",
+            "created_at",
+            "updated_at",
+        )
 
     def create(self, validated_data):
         """Create product and automatically create associated price if provided"""
