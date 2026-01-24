@@ -35,7 +35,7 @@ class OrderDeliveryViewSet(
     http_method_names = ["get", "post", "patch", "delete"]
 
     queryset = OrderDelivery.objects.select_related(
-        "order_by", "customer"
+        "order_by"
     ).prefetch_related(
         "items__product", "items__price"
     ).all()
@@ -43,8 +43,8 @@ class OrderDeliveryViewSet(
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["order_number", "order_by__username", "order_by__email", "customer__name", "customer__shop_name"]
-    filterset_fields = ["order_by", "customer", "order_date"]
+    search_fields = ["order_number", "order_by__username", "order_by__email"]
+    filterset_fields = ["order_by", "order_date"]
     ordering_fields = ["order_date", "order_number", "total_amount", "created_at"]
     ordering = ["-order_date", "-created_at"]
 

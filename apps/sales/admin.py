@@ -31,7 +31,6 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         "order_number",
         "order_date",
         "order_by",
-        "customer",
         "total_amount",
         "items_count",
         "created_at",
@@ -41,14 +40,11 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         "order_number",
         "order_by__username",
         "order_by__email",
-        "customer__name",
-        "customer__shop_name",
     ]
     list_filter = [
         "order_date",
         "created_at",
         "order_by",
-        "customer",
     ]
     readonly_fields = [
         "id",
@@ -56,7 +52,7 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     ]
-    raw_id_fields = ["order_by", "customer"]
+    raw_id_fields = ["order_by"]
     inlines = [OrderItemInline]
     date_hierarchy = "order_date"
     ordering = ["-order_date", "-order_number"]
@@ -72,7 +68,6 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         ("Relations", {
             "fields": (
                 "order_by",
-                "customer",
             )
         }),
         ("Financial", {
@@ -123,7 +118,6 @@ class OrderItemAdmin(admin.ModelAdmin):
         "shift",
         "order__order_date",
         "created_at",
-        "order__customer",
     ]
     readonly_fields = [
         "id",

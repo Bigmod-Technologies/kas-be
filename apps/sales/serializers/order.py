@@ -3,7 +3,6 @@ from decimal import Decimal
 from apps.sales.models import OrderDelivery, OrderItem
 from apps.product.serializers import ProductSerializer, ProductPriceSerializer
 from apps.user.serializers.staff import UserSerializer
-from apps.crm.serializers.customer import CustomerSerializer
 from apps.sales.utils import generate_order_number
 
 
@@ -92,7 +91,6 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
     """Serializer for OrderDelivery with nested items"""
 
     order_by_details = UserSerializer(read_only=True, source="order_by")
-    customer_details = CustomerSerializer(read_only=True, source="customer")
     items = OrderItemSerializer(many=True, read_only=True)
     items_data = OrderItemWriteSerializer(
         many=True, write_only=True, required=False, allow_null=True
@@ -106,8 +104,6 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             "order_date",
             "order_by",
             "order_by_details",
-            "customer",
-            "customer_details",
             "total_amount",
             "items",
             "items_data",
@@ -118,7 +114,6 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             "id",
             "order_number",
             "order_by_details",
-            "customer_details",
             "items",
             "created_at",
             "updated_at",

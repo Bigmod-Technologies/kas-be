@@ -4,7 +4,6 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from apps.core.models import BaseModel
 from apps.product.models import Product, ProductPrice
-from apps.crm.models import Customer
 
 User = get_user_model()
 
@@ -26,12 +25,6 @@ class OrderDelivery(BaseModel):
         on_delete=models.PROTECT,
         related_name="orderorder_by",
         help_text="User who placed the order",
-    )
-    customer = models.ForeignKey(
-        Customer,
-        on_delete=models.PROTECT,
-        related_name="customer_orders",
-        help_text="Customer who placed the order",
     )
     total_amount = models.DecimalField(
         max_digits=12, 
