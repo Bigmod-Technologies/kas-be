@@ -53,7 +53,7 @@ class StockTransactionViewSet(
     http_method_names = ["get", "post", "patch", "delete"]
 
     queryset = StockTransaction.objects.select_related(
-        "stock_type", "product", "price", "transfer_from", "transfer_to"
+        "stock_type", "product", "product_price", "order_item", "transfer_from", "transfer_to"
     ).all()
     serializer_class = StockTransactionSerializer
     pagination_class = DefaultPagination
@@ -69,7 +69,10 @@ class StockTransactionViewSet(
         "transaction_type",
         "have_transfer",
         "stock_type",
+        "stock_type__name",
         "product",
+        "product_price",
+        "order_item",
     ]
     ordering_fields = ["created_at", "transaction_type"]
     ordering = ["-created_at"]

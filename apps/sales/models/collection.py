@@ -56,24 +56,6 @@ class SalesCollection(BaseModel):
         default=0.00,
         help_text="Amount collected",
     )
-    due_amount = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0.00,
-        help_text="Amount due",
-    )
-    collection_by_personal_loan = models.DecimalField(
-        max_digits=12,
-        decimal_places=2,
-        default=0.00,
-        help_text="Amount collected by personal loan",
-    )
-    deduction_percentage = models.DecimalField(
-        max_digits=5,
-        decimal_places=2,
-        default=10.00,
-        help_text="Deduction percentage in percentage",
-    )
 
     class Meta:
         verbose_name = "Sales Collection"
@@ -84,44 +66,7 @@ class SalesCollection(BaseModel):
         """Auto-generate sales_id if not provided"""
         if not self.sales_id:
             from apps.sales.utils import generate_sales_id
-
             self.sales_id = generate_sales_id()
-
-        # Copy commission from user profile if available
-        if self.sales_by and hasattr(self.sales_by, "profile"):
-            if (
-                self.sales_by.profile
-                and self.sales_by.profile.sales_commission_in_percentage
-            ):
-                self.commission_in_percentage = (
-                    self.sales_by.profile.sales_commission_in_percentage
-                )
-
-        # If customer has special discount, copy it from customer
-        if self.customer and self.customer.have_special_discount:
-            self.special_discount_in_percentage = (
-                self.customer.special_discount_in_persentage
-            )
-
-        # Calculate total after applying special discount
-        total_sale_decimal = Decimal(str(self.total_sale))
-        special_discount_decimal = Decimal(str(self.special_discount_in_percentage))
-
-        # Apply special discount: total_amount - (total_amount * discount_percentage / 100)
-        if special_discount_decimal > 0:
-            discount_amount = total_sale_decimal * (
-                special_discount_decimal / Decimal("100.00")
-            )
-            total_after_discount = total_sale_decimal - discount_amount
-        else:
-            total_after_discount = total_sale_decimal
-
-        # Calculate due amount: total_after_discount - collection_amount - collection_by_personal_loan
-        self.due_amount = (
-            total_after_discount
-            - Decimal(str(self.collection_amount))
-            - Decimal(str(self.collection_by_personal_loan))
-        )
 
         super().save(*args, **kwargs)
 
@@ -129,98 +74,74 @@ class SalesCollection(BaseModel):
         return f"Sales {self.sales_id} - {self.customer.name}"
 
 
-class CollectionItem(BaseModel):
-    """Model to represent collection items"""
+class DamageItem(BaseModel):
+    """Model to represent damage items in sales collections"""
 
     sales = models.ForeignKey(
         SalesCollection,
         on_delete=models.CASCADE,
-        related_name="items",
-        help_text="Sales collection this item belongs to",
+        related_name="damage_items",
+        help_text="Sales collection this damage item belongs to",
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
-        related_name="collection_items",
-        help_text="Product in this collection item",
+        related_name="damage_items",
+        help_text="Product in this damage item",
     )
     price = models.ForeignKey(
         ProductPrice,
         on_delete=models.PROTECT,
-        related_name="collection_items_by_price",
-        help_text="Price for this collection item",
+        related_name="damage_items_by_price",
+        help_text="Price for this damage item",
     )
-    order_cnt_qtn = models.IntegerField(default=0, help_text="Carton quantity")
-    order_pcs_qtn = models.IntegerField(default=0, help_text="Pieces quantity")
-    damage_cnt_qtn = models.IntegerField(default=0, help_text="Damaged carton quantity")
-    damage_pcs_qtn = models.IntegerField(default=0, help_text="Damaged pieces quantity")
-    free_cnt_qtn = models.IntegerField(default=0, help_text="Free carton quantity")
-    free_pcs_qtn = models.IntegerField(default=0, help_text="Free pieces quantity")
+    cnt_qtn = models.IntegerField(default=0, help_text="Carton quantity")
+    pcs_qtn = models.IntegerField(default=0, help_text="Pieces quantity")
+    deduction_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0.00,
+        help_text="Deduction percentage in percentage",
+    )
 
     class Meta:
-        verbose_name = "Collection Item"
-        verbose_name_plural = "Collection Items"
+        verbose_name = "Damage Item"
+        verbose_name_plural = "Damage Items"
         ordering = ["sales", "product"]
 
     def __str__(self):
         return f"{self.sales.sales_id} - {self.product.name}"
 
-    @property
-    def total_order_amount(self):
-        """Calculate total order amount using the price field"""
-        if not self.price:
-            return Decimal("0.00")
 
-        total = Decimal("0.00")
+class FreeItem(BaseModel):
+    """Model to represent free items in sales collections"""
 
-        total += self.price.ctn_price * self.order_cnt_qtn
-        total += self.price.piece_price * self.order_pcs_qtn
-        return total
+    sales = models.ForeignKey(
+        SalesCollection,
+        on_delete=models.CASCADE,
+        related_name="free_items",
+        help_text="Sales collection this free item belongs to",
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="free_items",
+        help_text="Product in this free item",
+    )
+    price = models.ForeignKey(
+        ProductPrice,
+        on_delete=models.PROTECT,
+        related_name="free_items_by_price",
+        help_text="Price for this free item",
+    )
+    cnt_qtn = models.IntegerField(default=0, help_text="Carton quantity")
+    pcs_qtn = models.IntegerField(default=0, help_text="Pieces quantity")
 
-    @property
-    def total_damage_amount(self):
-        """Calculate total damage amount using the price field with deduction percentage"""
-        if not self.price:
-            return Decimal("0.00")
+    class Meta:
+        verbose_name = "Free Item"
+        verbose_name_plural = "Free Items"
+        ordering = ["sales", "product"]
 
-        # Calculate base damage amount
-        base_total = Decimal("0.00")
-        if self.price.ctn_price:
-            base_total += Decimal(str(self.price.ctn_price)) * Decimal(
-                str(self.damage_cnt_qtn)
-            )
-        if self.price.piece_price:
-            base_total += Decimal(str(self.price.piece_price)) * Decimal(
-                str(self.damage_pcs_qtn)
-            )
-
-        # Apply deduction percentage from sales collection
-        if self.sales and self.sales.deduction_percentage:
-            deduction_rate = Decimal(str(self.sales.deduction_percentage)) / Decimal(
-                "100.00"
-            )
-            total = base_total * (Decimal("1.00") - deduction_rate)
-        else:
-            total = base_total
-
-        return total
-
-    @property
-    def total_free_amount(self):
-        """Calculate total free amount using the price field with deduction percentage"""
-        if not self.price:
-            return Decimal("0.00")
-
-        # Calculate base free amount
-        total = Decimal("0.00")
-        if self.price.ctn_price:
-            total += Decimal(str(self.price.ctn_price)) * Decimal(
-                str(self.free_cnt_qtn)
-            )
-        if self.price.piece_price:
-            total += Decimal(str(self.price.piece_price)) * Decimal(
-                str(self.free_pcs_qtn)
-            )
-        return total
-
+    def __str__(self):
+        return f"{self.sales.sales_id} - {self.product.name}"
 

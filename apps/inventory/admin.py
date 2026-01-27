@@ -14,14 +14,19 @@ class StockTypeAdmin(admin.ModelAdmin):
 class StockTransactionAdmin(admin.ModelAdmin):
     list_display = [
         'product',
+        'product_price',
         'stock_type',
         'transaction_type',
         'ctn_quantity',
         'piece_quantity',
-        'price',
+        'ctn_price',
+        'piece_price',
+        'total_price',
+        'order_item',
         'have_transfer',
         'transfer_from',
         'transfer_to',
+        'batch_number',
         'created_at'
     ]
     list_filter = [
@@ -33,19 +38,25 @@ class StockTransactionAdmin(admin.ModelAdmin):
     search_fields = [
         'product__name',
         'stock_type__name',
-        'note'
+        'note',
+        'batch_number',
+        'order_item__order__order_number'
     ]
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['total_price', 'created_at', 'updated_at']
     fieldsets = (
         ('Transaction Details', {
-            'fields': ('stock_type', 'product', 'price', 'transaction_type', 'ctn_quantity', 'piece_quantity')
+            'fields': ('stock_type', 'product', 'product_price', 'transaction_type', 'ctn_quantity', 'piece_quantity', 'ctn_price', 'piece_price', 'total_price')
+        }),
+        ('Order Information', {
+            'fields': ('order_item',),
+            'classes': ('collapse',)
         }),
         ('Transfer Information', {
             'fields': ('have_transfer', 'transfer_from', 'transfer_to'),
             'classes': ('collapse',)
         }),
         ('Additional Information', {
-            'fields': ('note', 'created_at', 'updated_at')
+            'fields': ('note', 'batch_number', 'created_at', 'updated_at')
         }),
     )
     ordering = ['-created_at']

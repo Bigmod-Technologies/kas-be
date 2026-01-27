@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
-from apps.sales.models import OrderDelivery, OrderItem, SalesCollection, CollectionItem
+from apps.sales.models import OrderDelivery, OrderItem, SalesCollection, DamageItem, FreeItem
 
 
 class OrderItemInline(admin.TabularInline):
@@ -14,7 +14,7 @@ class OrderItemInline(admin.TabularInline):
         "shift",
         ("quantity_in_ctn", "quantity_in_pcs"),
         ("advanced_in_ctn", "advanced_in_pcs"),
-        ("damaged_in_ctn", "damaged_in_pcs"),
+        ("return_in_ctn", "return_in_pcs"),
         "total_amount",
     ]
     readonly_fields = ["total_amount"]
@@ -31,7 +31,6 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         "order_number",
         "order_date",
         "order_by",
-        "customer",
         "total_amount",
         "items_count",
         "created_at",
@@ -41,14 +40,11 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         "order_number",
         "order_by__username",
         "order_by__email",
-        "customer__name",
-        "customer__shop_name",
     ]
     list_filter = [
         "order_date",
         "created_at",
         "order_by",
-        "customer",
     ]
     readonly_fields = [
         "id",
@@ -56,7 +52,7 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         "created_at",
         "updated_at",
     ]
-    raw_id_fields = ["order_by", "customer"]
+    raw_id_fields = ["order_by"]
     inlines = [OrderItemInline]
     date_hierarchy = "order_date"
     ordering = ["-order_date", "-order_number"]
@@ -72,7 +68,6 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         ("Relations", {
             "fields": (
                 "order_by",
-                "customer",
             )
         }),
         ("Financial", {
@@ -123,7 +118,6 @@ class OrderItemAdmin(admin.ModelAdmin):
         "shift",
         "order__order_date",
         "created_at",
-        "order__customer",
     ]
     readonly_fields = [
         "id",
@@ -152,7 +146,7 @@ class OrderItemAdmin(admin.ModelAdmin):
             "fields": (
                 ("quantity_in_ctn", "quantity_in_pcs"),
                 ("advanced_in_ctn", "advanced_in_pcs"),
-                ("damaged_in_ctn", "damaged_in_pcs"),
+                ("return_in_ctn", "return_in_pcs"),
             )
         }),
         ("Financial", {
@@ -191,35 +185,45 @@ class OrderItemAdmin(admin.ModelAdmin):
     
     def damaged_display(self, obj):
         """Display damaged quantity in a formatted way"""
-        if obj.damaged_in_ctn or obj.damaged_in_pcs:
+        if obj.return_in_ctn or obj.return_in_pcs:
             return format_html(
                 '<span style="color: red;">CTN: <strong>{}</strong> | PCS: <strong>{}</strong></span>',
-                obj.damaged_in_ctn,
-                obj.damaged_in_pcs
+                obj.return_in_ctn,
+                obj.return_in_pcs
             )
         return "-"
     damaged_display.short_description = "Damaged"
 
 
-class CollectionItemInline(admin.TabularInline):
-    """Inline admin for CollectionItem in SalesCollection admin"""
+class DamageItemInline(admin.TabularInline):
+    """Inline admin for DamageItem in SalesCollection admin"""
     
-    model = CollectionItem
+    model = DamageItem
     extra = 0
     fields = [
         "product",
         "price",
-        ("order_cnt_qtn", "order_pcs_qtn"),
-        ("damage_cnt_qtn", "damage_pcs_qtn"),
-        ("free_cnt_qtn", "free_pcs_qtn"),
-        "total_order_amount",
-        "total_damage_amount",
-        "total_free_amount",
+        ("cnt_qtn", "pcs_qtn"),
+        "deduction_percentage",
     ]
-    readonly_fields = ["total_order_amount", "total_damage_amount", "total_free_amount"]
     raw_id_fields = ["product", "price"]
-    verbose_name = "Collection Item"
-    verbose_name_plural = "Collection Items"
+    verbose_name = "Damage Item"
+    verbose_name_plural = "Damage Items"
+
+
+class FreeItemInline(admin.TabularInline):
+    """Inline admin for FreeItem in SalesCollection admin"""
+    
+    model = FreeItem
+    extra = 0
+    fields = [
+        "product",
+        "price",
+        ("cnt_qtn", "pcs_qtn"),
+    ]
+    raw_id_fields = ["product", "price"]
+    verbose_name = "Free Item"
+    verbose_name_plural = "Free Items"
 
 
 @admin.register(SalesCollection)
@@ -233,8 +237,6 @@ class SalesCollectionAdmin(admin.ModelAdmin):
         "customer",
         "total_sale",
         "collection_amount",
-        "due_amount",
-        "items_count",
         "created_at",
     ]
     list_display_links = ["sales_id"]
@@ -258,7 +260,7 @@ class SalesCollectionAdmin(admin.ModelAdmin):
         "updated_at",
     ]
     raw_id_fields = ["sales_by", "customer"]
-    inlines = [CollectionItemInline]
+    inlines = [DamageItemInline, FreeItemInline]
     date_hierarchy = "sales_date"
     ordering = ["-sales_date", "-sales_id"]
     
@@ -281,10 +283,7 @@ class SalesCollectionAdmin(admin.ModelAdmin):
                 "total_sale",
                 "commission_in_percentage",
                 "special_discount_in_percentage",
-                "deduction_percentage",
                 "collection_amount",
-                "collection_by_personal_loan",
-                "due_amount",
             )
         }),
         ("Timestamps", {
@@ -296,29 +295,15 @@ class SalesCollectionAdmin(admin.ModelAdmin):
         }),
     )
     
-    def items_count(self, obj):
-        """Display the count of items in the collection"""
-        count = obj.items.count()
-        return format_html(
-            '<span style="font-weight: bold;">{}</span>',
-            count
-        )
-    items_count.short_description = "Items"
 
-
-@admin.register(CollectionItem)
-class CollectionItemAdmin(admin.ModelAdmin):
-    """Admin interface for CollectionItem model"""
+@admin.register(DamageItem)
+class DamageItemAdmin(admin.ModelAdmin):
+    """Admin interface for DamageItem model"""
     
     list_display = [
         "sales",
         "product",
-        "order_quantity_display",
-        "damaged_display",
-        "free_display",
-        "total_order_amount",
-        "total_damage_amount",
-        "total_free_amount",
+        "quantity_display",
         "created_at",
     ]
     list_display_links = ["sales", "product"]
@@ -334,9 +319,6 @@ class CollectionItemAdmin(admin.ModelAdmin):
     ]
     readonly_fields = [
         "id",
-        "total_order_amount",
-        "total_damage_amount",
-        "total_free_amount",
         "created_at",
         "updated_at",
     ]
@@ -358,16 +340,12 @@ class CollectionItemAdmin(admin.ModelAdmin):
         }),
         ("Quantities", {
             "fields": (
-                ("order_cnt_qtn", "order_pcs_qtn"),
-                ("damage_cnt_qtn", "damage_pcs_qtn"),
-                ("free_cnt_qtn", "free_pcs_qtn"),
+                ("cnt_qtn", "pcs_qtn"),
             )
         }),
-        ("Financial", {
+        ("Deduction", {
             "fields": (
-                "total_order_amount",
-                "total_damage_amount",
-                "total_free_amount",
+                "deduction_percentage",
             )
         }),
         ("Timestamps", {
@@ -379,35 +357,82 @@ class CollectionItemAdmin(admin.ModelAdmin):
         }),
     )
     
-    def order_quantity_display(self, obj):
-        """Display order quantity in a formatted way"""
-        if obj.order_cnt_qtn or obj.order_pcs_qtn:
-            return format_html(
-                '<span>CTN: <strong>{}</strong> | PCS: <strong>{}</strong></span>',
-                obj.order_cnt_qtn,
-                obj.order_pcs_qtn
-            )
-        return "-"
-    order_quantity_display.short_description = "Order Quantity"
-    
-    def damaged_display(self, obj):
-        """Display damaged quantity in a formatted way"""
-        if obj.damage_cnt_qtn or obj.damage_pcs_qtn:
+    def quantity_display(self, obj):
+        """Display quantity in a formatted way"""
+        if obj.cnt_qtn or obj.pcs_qtn:
             return format_html(
                 '<span style="color: red;">CTN: <strong>{}</strong> | PCS: <strong>{}</strong></span>',
-                obj.damage_cnt_qtn,
-                obj.damage_pcs_qtn
+                obj.cnt_qtn,
+                obj.pcs_qtn
             )
         return "-"
-    damaged_display.short_description = "Damaged"
+    quantity_display.short_description = "Quantity"
+
+
+@admin.register(FreeItem)
+class FreeItemAdmin(admin.ModelAdmin):
+    """Admin interface for FreeItem model"""
     
-    def free_display(self, obj):
-        """Display free quantity in a formatted way"""
-        if obj.free_cnt_qtn or obj.free_pcs_qtn:
+    list_display = [
+        "sales",
+        "product",
+        "quantity_display",
+        "created_at",
+    ]
+    list_display_links = ["sales", "product"]
+    search_fields = [
+        "sales__sales_id",
+        "product__name",
+        "product__sku",
+    ]
+    list_filter = [
+        "sales__sales_date",
+        "created_at",
+        "sales__customer",
+    ]
+    readonly_fields = [
+        "id",
+        "created_at",
+        "updated_at",
+    ]
+    raw_id_fields = ["sales", "product", "price"]
+    ordering = ["-created_at", "-sales"]
+    
+    fieldsets = (
+        ("Sales Collection Information", {
+            "fields": (
+                "id",
+                "sales",
+            )
+        }),
+        ("Product & Price", {
+            "fields": (
+                "product",
+                "price",
+            )
+        }),
+        ("Quantities", {
+            "fields": (
+                ("cnt_qtn", "pcs_qtn"),
+            )
+        }),
+        ("Timestamps", {
+            "fields": (
+                "created_at",
+                "updated_at",
+            ),
+            "classes": ("collapse",)
+        }),
+    )
+    
+    def quantity_display(self, obj):
+        """Display quantity in a formatted way"""
+        if obj.cnt_qtn or obj.pcs_qtn:
             return format_html(
                 '<span style="color: green;">CTN: <strong>{}</strong> | PCS: <strong>{}</strong></span>',
-                obj.free_cnt_qtn,
-                obj.free_pcs_qtn
+                obj.cnt_qtn,
+                obj.pcs_qtn
             )
         return "-"
-    free_display.short_description = "Free"
+    quantity_display.short_description = "Quantity"
+

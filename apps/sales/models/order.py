@@ -4,7 +4,6 @@ from decimal import Decimal
 from django.contrib.auth import get_user_model
 from apps.core.models import BaseModel
 from apps.product.models import Product, ProductPrice
-from apps.crm.models import Customer
 
 User = get_user_model()
 
@@ -26,12 +25,6 @@ class OrderDelivery(BaseModel):
         on_delete=models.PROTECT,
         related_name="orderorder_by",
         help_text="User who placed the order",
-    )
-    customer = models.ForeignKey(
-        Customer,
-        on_delete=models.PROTECT,
-        related_name="customer_orders",
-        help_text="Customer who placed the order",
     )
     total_amount = models.DecimalField(
         max_digits=12, 
@@ -90,11 +83,11 @@ class OrderItem(BaseModel):
     advanced_in_pcs = models.IntegerField(
         default=0, help_text="Advanced quantity in pieces"
     )
-    damaged_in_ctn = models.IntegerField(
-        default=0, help_text="Damaged quantity in carton"
+    return_in_ctn = models.IntegerField(
+        default=0, help_text="Return quantity in carton"
     )
-    damaged_in_pcs = models.IntegerField(
-        default=0, help_text="Damaged quantity in pieces"
+    return_in_pcs = models.IntegerField(
+        default=0, help_text="Return quantity in pieces"
     )
 
     class Meta:
@@ -110,9 +103,9 @@ class OrderItem(BaseModel):
 
         total = Decimal("0.00")
 
-        # Calculate net quantity (quantity + advanced - damaged)
-        net_ctn = self.quantity_in_ctn + self.advanced_in_ctn - self.damaged_in_ctn
-        net_pcs = self.quantity_in_pcs + self.advanced_in_pcs - self.damaged_in_pcs
+        # Calculate net quantity (quantity + advanced - return)
+        net_ctn = self.quantity_in_ctn + self.advanced_in_ctn - self.return_in_ctn
+        net_pcs = self.quantity_in_pcs + self.advanced_in_pcs - self.return_in_pcs
 
         # Calculate amount for cartons (handles both positive and negative net quantities)
         if self.price.ctn_price and net_ctn != 0:

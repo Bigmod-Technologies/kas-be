@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import ProtectedError
 
-from .models import OrderDelivery, OrderItem, SalesCollection, CollectionItem
+from .models import OrderDelivery, OrderItem, SalesCollection
 from .serializers import (
     OrderDeliverySerializer,
     OrderNumberGenerateSerializer,
@@ -35,7 +35,7 @@ class OrderDeliveryViewSet(
     http_method_names = ["get", "post", "patch", "delete"]
 
     queryset = OrderDelivery.objects.select_related(
-        "order_by", "customer"
+        "order_by"
     ).prefetch_related(
         "items__product", "items__price"
     ).all()
@@ -43,8 +43,8 @@ class OrderDeliveryViewSet(
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["order_number", "order_by__username", "order_by__email", "customer__name", "customer__shop_name"]
-    filterset_fields = ["order_by", "customer", "order_date"]
+    search_fields = ["order_number", "order_by__username", "order_by__email"]
+    filterset_fields = ["order_by", "order_date"]
     ordering_fields = ["order_date", "order_number", "total_amount", "created_at"]
     ordering = ["-order_date", "-created_at"]
 
@@ -99,9 +99,7 @@ class SalesCollectionViewSet(
 ):
     """
     API endpoint that allows sales collections to be viewed or edited.
-    Supports creating sales collections with items in a single request.
-    Auto-calculates: total_sale, commission_in_percentage, special_discount_in_percentage,
-    deduction_percentage, and due_amount.
+    Auto-calculates: total_sale, commission_in_percentage, and special_discount_in_percentage.
     """
 
     http_method_names = ["get", "post", "patch", "delete"]
@@ -109,7 +107,8 @@ class SalesCollectionViewSet(
     queryset = SalesCollection.objects.select_related(
         "sales_by", "customer"
     ).prefetch_related(
-        "items__product", "items__price"
+        "damage_items__product", "damage_items__price",
+        "free_items__product", "free_items__price"
     ).all()
     serializer_class = SalesCollectionSerializer
     pagination_class = DefaultPagination
@@ -128,7 +127,6 @@ class SalesCollectionViewSet(
         "sales_id",
         "total_sale",
         "collection_amount",
-        "due_amount",
         "created_at",
     ]
     ordering = ["-sales_date", "-created_at"]

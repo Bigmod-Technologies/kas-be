@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from apps.inventory.models import StockTransaction, StockType
-from apps.product.models import Product, ProductPrice
 from apps.product.serializers import ProductSerializer, ProductPriceSerializer
+# from apps.sales.serializers.order import OrderItemSerializer
 
 
 class StockTypeNestedSerializer(serializers.ModelSerializer):
     """Nested serializer for stock type details"""
-    
+
     class Meta:
         model = StockType
         fields = ["id", "name"]
@@ -15,10 +15,17 @@ class StockTypeNestedSerializer(serializers.ModelSerializer):
 class StockTransactionSerializer(serializers.ModelSerializer):
     stock_type_details = StockTypeNestedSerializer(read_only=True, source="stock_type")
     product_details = ProductSerializer(read_only=True, source="product")
-    price_details = ProductPriceSerializer(read_only=True, source="price")
-    transfer_from_details = StockTypeNestedSerializer(read_only=True, source="transfer_from")
-    transfer_to_details = StockTypeNestedSerializer(read_only=True, source="transfer_to")
-    
+    product_price_details = ProductPriceSerializer(
+        read_only=True, source="product_price"
+    )
+    # order_item_details = OrderItemSerializer(read_only=True, source="order_item")
+    transfer_from_details = StockTypeNestedSerializer(
+        read_only=True, source="transfer_from"
+    )
+    transfer_to_details = StockTypeNestedSerializer(
+        read_only=True, source="transfer_to"
+    )
+
     class Meta:
         model = StockTransaction
         fields = [
@@ -27,17 +34,23 @@ class StockTransactionSerializer(serializers.ModelSerializer):
             "stock_type_details",
             "product",
             "product_details",
-            "price",
-            "price_details",
+            "product_price",
+            "product_price_details",
             "transaction_type",
             "ctn_quantity",
             "piece_quantity",
+            "ctn_price",
+            "piece_price",
+            "total_price",
+            "order_item",
+            # "order_item_details",
             "have_transfer",
             "transfer_from",
             "transfer_from_details",
             "transfer_to",
             "transfer_to_details",
             "note",
+            "batch_number",
             "created_at",
             "updated_at",
         ]
@@ -45,19 +58,22 @@ class StockTransactionSerializer(serializers.ModelSerializer):
             "id",
             "stock_type_details",
             "product_details",
-            "price_details",
+            "product_price",
+            "product_price_details",
+            "order_item",
             "transfer_from_details",
             "transfer_to_details",
+            "total_price",
             "created_at",
             "updated_at",
         )
-    
+
     def validate(self, data):
         """Validate transfer fields"""
         have_transfer = data.get("have_transfer", False)
         transfer_from = data.get("transfer_from")
         transfer_to = data.get("transfer_to")
-        
+
         if have_transfer:
             if not transfer_from or not transfer_to:
                 raise serializers.ValidationError(
@@ -72,6 +88,5 @@ class StockTransactionSerializer(serializers.ModelSerializer):
             if transfer_from or transfer_to:
                 data["transfer_from"] = None
                 data["transfer_to"] = None
-        
-        return data
 
+        return data

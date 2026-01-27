@@ -3,7 +3,6 @@ from decimal import Decimal
 from apps.sales.models import OrderDelivery, OrderItem
 from apps.product.serializers import ProductSerializer, ProductPriceSerializer
 from apps.user.serializers.staff import UserSerializer
-from apps.crm.serializers.customer import CustomerSerializer
 from apps.sales.utils import generate_order_number
 
 
@@ -31,8 +30,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "quantity_in_pcs",
             "advanced_in_ctn",
             "advanced_in_pcs",
-            "damaged_in_ctn",
-            "damaged_in_pcs",
+            "return_in_ctn",
+            "return_in_pcs",
             "total_amount",
             "created_at",
             "updated_at",
@@ -55,9 +54,9 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
         total = Decimal("0.00")
 
-        # Calculate net quantity (quantity + advanced - damaged)
-        net_ctn = obj.quantity_in_ctn + obj.advanced_in_ctn - obj.damaged_in_ctn
-        net_pcs = obj.quantity_in_pcs + obj.advanced_in_pcs - obj.damaged_in_pcs
+        # Calculate net quantity (quantity + advanced - return)
+        net_ctn = obj.quantity_in_ctn + obj.advanced_in_ctn - obj.return_in_ctn
+        net_pcs = obj.quantity_in_pcs + obj.advanced_in_pcs - obj.return_in_pcs
 
         # Calculate amount for cartons (handles both positive and negative net quantities)
         if obj.price.ctn_price and net_ctn != 0:
@@ -83,8 +82,8 @@ class OrderItemWriteSerializer(serializers.ModelSerializer):
             "quantity_in_pcs",
             "advanced_in_ctn",
             "advanced_in_pcs",
-            "damaged_in_ctn",
-            "damaged_in_pcs",
+            "return_in_ctn",
+            "return_in_pcs",
         ]
 
 
@@ -92,7 +91,6 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
     """Serializer for OrderDelivery with nested items"""
 
     order_by_details = UserSerializer(read_only=True, source="order_by")
-    customer_details = CustomerSerializer(read_only=True, source="customer")
     items = OrderItemSerializer(many=True, read_only=True)
     items_data = OrderItemWriteSerializer(
         many=True, write_only=True, required=False, allow_null=True
@@ -106,8 +104,6 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             "order_date",
             "order_by",
             "order_by_details",
-            "customer",
-            "customer_details",
             "total_amount",
             "items",
             "items_data",
@@ -118,7 +114,6 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             "id",
             "order_number",
             "order_by_details",
-            "customer_details",
             "items",
             "created_at",
             "updated_at",
@@ -144,16 +139,16 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
 
         total = Decimal("0.00")
 
-        # Calculate net quantity (quantity + advanced - damaged)
+        # Calculate net quantity (quantity + advanced - return)
         net_ctn = (
             item_data.get("quantity_in_ctn", 0)
             + item_data.get("advanced_in_ctn", 0)
-            - item_data.get("damaged_in_ctn", 0)
+            - item_data.get("return_in_ctn", 0)
         )
         net_pcs = (
             item_data.get("quantity_in_pcs", 0)
             + item_data.get("advanced_in_pcs", 0)
-            - item_data.get("damaged_in_pcs", 0)
+            - item_data.get("return_in_pcs", 0)
         )
 
         # Calculate amount for cartons (handles both positive and negative net quantities)
