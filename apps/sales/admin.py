@@ -14,7 +14,7 @@ class OrderItemInline(admin.TabularInline):
         "shift",
         ("quantity_in_ctn", "quantity_in_pcs"),
         ("advanced_in_ctn", "advanced_in_pcs"),
-        ("damaged_in_ctn", "damaged_in_pcs"),
+        ("return_in_ctn", "return_in_pcs"),
         "total_amount",
     ]
     readonly_fields = ["total_amount"]
@@ -146,7 +146,7 @@ class OrderItemAdmin(admin.ModelAdmin):
             "fields": (
                 ("quantity_in_ctn", "quantity_in_pcs"),
                 ("advanced_in_ctn", "advanced_in_pcs"),
-                ("damaged_in_ctn", "damaged_in_pcs"),
+                ("return_in_ctn", "return_in_pcs"),
             )
         }),
         ("Financial", {
@@ -185,11 +185,11 @@ class OrderItemAdmin(admin.ModelAdmin):
     
     def damaged_display(self, obj):
         """Display damaged quantity in a formatted way"""
-        if obj.damaged_in_ctn or obj.damaged_in_pcs:
+        if obj.return_in_ctn or obj.return_in_pcs:
             return format_html(
                 '<span style="color: red;">CTN: <strong>{}</strong> | PCS: <strong>{}</strong></span>',
-                obj.damaged_in_ctn,
-                obj.damaged_in_pcs
+                obj.return_in_ctn,
+                obj.return_in_pcs
             )
         return "-"
     damaged_display.short_description = "Damaged"

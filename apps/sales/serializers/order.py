@@ -30,8 +30,8 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "quantity_in_pcs",
             "advanced_in_ctn",
             "advanced_in_pcs",
-            "damaged_in_ctn",
-            "damaged_in_pcs",
+            "return_in_ctn",
+            "return_in_pcs",
             "total_amount",
             "created_at",
             "updated_at",
@@ -54,9 +54,9 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
         total = Decimal("0.00")
 
-        # Calculate net quantity (quantity + advanced - damaged)
-        net_ctn = obj.quantity_in_ctn + obj.advanced_in_ctn - obj.damaged_in_ctn
-        net_pcs = obj.quantity_in_pcs + obj.advanced_in_pcs - obj.damaged_in_pcs
+        # Calculate net quantity (quantity + advanced - return)
+        net_ctn = obj.quantity_in_ctn + obj.advanced_in_ctn - obj.return_in_ctn
+        net_pcs = obj.quantity_in_pcs + obj.advanced_in_pcs - obj.return_in_pcs
 
         # Calculate amount for cartons (handles both positive and negative net quantities)
         if obj.price.ctn_price and net_ctn != 0:
@@ -82,8 +82,8 @@ class OrderItemWriteSerializer(serializers.ModelSerializer):
             "quantity_in_pcs",
             "advanced_in_ctn",
             "advanced_in_pcs",
-            "damaged_in_ctn",
-            "damaged_in_pcs",
+            "return_in_ctn",
+            "return_in_pcs",
         ]
 
 
@@ -139,16 +139,16 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
 
         total = Decimal("0.00")
 
-        # Calculate net quantity (quantity + advanced - damaged)
+        # Calculate net quantity (quantity + advanced - return)
         net_ctn = (
             item_data.get("quantity_in_ctn", 0)
             + item_data.get("advanced_in_ctn", 0)
-            - item_data.get("damaged_in_ctn", 0)
+            - item_data.get("return_in_ctn", 0)
         )
         net_pcs = (
             item_data.get("quantity_in_pcs", 0)
             + item_data.get("advanced_in_pcs", 0)
-            - item_data.get("damaged_in_pcs", 0)
+            - item_data.get("return_in_pcs", 0)
         )
 
         # Calculate amount for cartons (handles both positive and negative net quantities)
