@@ -14,6 +14,7 @@ class StockTypeAdmin(admin.ModelAdmin):
 class StockTransactionAdmin(admin.ModelAdmin):
     list_display = [
         'product',
+        'product_price',
         'stock_type',
         'transaction_type',
         'ctn_quantity',
@@ -21,6 +22,7 @@ class StockTransactionAdmin(admin.ModelAdmin):
         'ctn_price',
         'piece_price',
         'total_price',
+        'order_item',
         'have_transfer',
         'transfer_from',
         'transfer_to',
@@ -37,12 +39,17 @@ class StockTransactionAdmin(admin.ModelAdmin):
         'product__name',
         'stock_type__name',
         'note',
-        'batch_number'
+        'batch_number',
+        'order_item__order__order_number'
     ]
     readonly_fields = ['total_price', 'created_at', 'updated_at']
     fieldsets = (
         ('Transaction Details', {
-            'fields': ('stock_type', 'product', 'transaction_type', 'ctn_quantity', 'piece_quantity', 'ctn_price', 'piece_price', 'total_price')
+            'fields': ('stock_type', 'product', 'product_price', 'transaction_type', 'ctn_quantity', 'piece_quantity', 'ctn_price', 'piece_price', 'total_price')
+        }),
+        ('Order Information', {
+            'fields': ('order_item',),
+            'classes': ('collapse',)
         }),
         ('Transfer Information', {
             'fields': ('have_transfer', 'transfer_from', 'transfer_to'),

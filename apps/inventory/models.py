@@ -1,8 +1,9 @@
 from django.db import models
 from apps.core.models import BaseModel
-from apps.product.models import Product
+from apps.product.models import Product, ProductPrice
 from django.db.models import Sum
 from decimal import Decimal
+from apps.sales.models import OrderItem
 
 
 class StockType(BaseModel):
@@ -81,6 +82,14 @@ class StockTransaction(BaseModel):
         related_name="stock_transactions",
         help_text="Product involved in the transaction",
     )
+    product_price = models.ForeignKey(
+        ProductPrice,
+        on_delete=models.PROTECT,
+        related_name="stock_transactions",
+        null=True,
+        blank=True,
+        help_text="Product price for this transaction",
+    )
     transaction_type = models.CharField(
         max_length=20,
         choices=TransactionType.choices,
@@ -133,6 +142,14 @@ class StockTransaction(BaseModel):
         default=0,
         help_text="Piece price for this transaction",
     )
+    order_item = models.ForeignKey(
+        OrderItem,
+        on_delete=models.CASCADE,
+        related_name="stock_transactions",
+        null=True,
+        blank=True,
+        help_text="Order item for this transaction",
+    )
 
     @property
     def total_price(self) -> Decimal:
@@ -140,6 +157,15 @@ class StockTransaction(BaseModel):
         ctn_total = Decimal(self.ctn_price) * Decimal(self.ctn_quantity)
         piece_total = Decimal(self.piece_price) * Decimal(self.piece_quantity)
         return ctn_total + piece_total
+
+    def save(self, *args, **kwargs):
+        """Override save to automatically set product_price from product if not provided"""
+        # Only set product_price if it's not already set and product exists
+        if not self.product_price and self.product:
+            latest_price = self.product.latest_product_price
+            if latest_price:
+                self.product_price = latest_price
+        super().save(*args, **kwargs)
 
     class Meta:
         verbose_name = "Stock Transaction"
