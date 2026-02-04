@@ -6,10 +6,12 @@ from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import ProtectedError
 
-from .models import OrderDelivery, OrderItem, DamageOrderItem, FreeOfferItem
+from .models import OrderDelivery, OrderItem, DamageOrderItem, FreeOfferItem, DueSell, DueCollection
 from .serializers import (
     OrderDeliverySerializer,
     OrderNumberGenerateSerializer,
+    DueSellSerializer,
+    DueCollectionSerializer,
 )
 from apps.core.utils import DefaultPagination
 
@@ -88,4 +90,87 @@ class OrderDeliveryViewSet(
         serializer = self.get_serializer(None)
         return Response(serializer.to_representation(None))
 
+
+@extend_schema(tags=["Due Sells"])
+class DueSellViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """API endpoint to manage due sells."""
+
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    queryset = (
+        DueSell.objects.select_related("customer", "deliver_by")
+        .all()
+    )
+    serializer_class = DueSellSerializer
+    pagination_class = DefaultPagination
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = [
+        "customer__name",
+        "customer__shop_name",
+        "deliver_by__username",
+        "deliver_by__first_name",
+        "deliver_by__last_name",
+    ]
+    filterset_fields = [
+        "customer",
+        "deliver_by",
+        "sale_date",
+        "created_at",
+    ]
+    ordering_fields = [
+        "sale_date",
+        "amount",
+        "created_at",
+    ]
+    ordering = ["-sale_date", "-created_at"]
+
+
+@extend_schema(tags=["Due Collections"])
+class DueCollectionViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """API endpoint to manage due collections (payments)."""
+
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    queryset = (
+        DueCollection.objects.select_related("customer", "collected_by")
+        .all()
+    )
+    serializer_class = DueCollectionSerializer
+    pagination_class = DefaultPagination
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = [
+        "customer__name",
+        "customer__shop_name",
+        "collected_by__username",
+        "collected_by__first_name",
+        "collected_by__last_name",
+    ]
+    filterset_fields = [
+        "customer",
+        "collected_by",
+        "collection_date",
+        "created_at",
+    ]
+    ordering_fields = [
+        "collection_date",
+        "amount",
+        "created_at",
+    ]
+    ordering = ["-collection_date", "-created_at"]
 

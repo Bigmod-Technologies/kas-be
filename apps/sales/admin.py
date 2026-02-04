@@ -1,10 +1,12 @@
 from django.contrib import admin
 from django.utils.html import format_html
 from apps.sales.models import (
-    OrderDelivery, 
-    OrderItem, 
-    DamageOrderItem, 
+    OrderDelivery,
+    OrderItem,
+    DamageOrderItem,
     FreeOfferItem,
+    DueSell,
+    DueCollection,
 )
 
 
@@ -393,6 +395,74 @@ class FreeOfferItemAdmin(admin.ModelAdmin):
             )
         return "-"
     quantity_display.short_description = "Quantity"
+
+
+@admin.register(DueSell)
+class DueSellAdmin(admin.ModelAdmin):
+    """Admin interface for DueSell model."""
+
+    list_display = [
+        "customer",
+        "deliver_by",
+        "sale_date",
+        "amount",
+        "created_at",
+    ]
+    list_filter = [
+        "sale_date",
+        "created_at",
+        "deliver_by",
+        "customer",
+    ]
+    search_fields = [
+        "customer__name",
+        "customer__shop_name",
+        "deliver_by__username",
+    ]
+    readonly_fields = [
+        "id",
+        "created_at",
+        "updated_at",
+    ]
+    raw_id_fields = [
+        "customer",
+        "deliver_by",
+    ]
+    ordering = ["-sale_date", "-created_at"]
+
+
+@admin.register(DueCollection)
+class DueCollectionAdmin(admin.ModelAdmin):
+    """Admin interface for DueCollection model."""
+
+    list_display = [
+        "customer",
+        "collected_by",
+        "collection_date",
+        "amount",
+        "created_at",
+    ]
+    list_filter = [
+        "collection_date",
+        "created_at",
+        "collected_by",
+        "customer",
+    ]
+    search_fields = [
+        "customer__name",
+        "customer__shop_name",
+        "collected_by__username",
+    ]
+    readonly_fields = [
+        "id",
+        "created_at",
+        "updated_at",
+    ]
+    raw_id_fields = [
+        "customer",
+        "collected_by",
+    ]
+    ordering = ["-collection_date", "-created_at"]
 
 
 

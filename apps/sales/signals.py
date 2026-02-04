@@ -100,7 +100,7 @@ def create_stock_transaction_on_free_offer_item_created(
     """
     if created:
         # Get stock type
-        free_offer_stock_type = StockType.objects.get(name="Free Offer Stock")
+        free_offer_stock_type = StockType.objects.get(name="Free Stock")
 
         # Handle free offer quantities (quantity_in_ctn and quantity_in_pcs)
         # These are OUT from Free Offer Stock
