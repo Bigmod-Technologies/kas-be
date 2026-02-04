@@ -6,11 +6,10 @@ from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import ProtectedError
 
-from .models import OrderDelivery, OrderItem, DamageOrderItem, FreeOfferItem, SalesCollection
+from .models import OrderDelivery, OrderItem, DamageOrderItem, FreeOfferItem
 from .serializers import (
     OrderDeliverySerializer,
     OrderNumberGenerateSerializer,
-    SalesCollectionSerializer,
 )
 from apps.core.utils import DefaultPagination
 
@@ -90,67 +89,3 @@ class OrderDeliveryViewSet(
         return Response(serializer.to_representation(None))
 
 
-@extend_schema(tags=["Sales Collections"])
-class SalesCollectionViewSet(
-    mixins.CreateModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet,
-):
-    """
-    API endpoint that allows sales collections to be viewed or edited.
-    Auto-calculates: total_sale, commission_in_percentage, and special_discount_in_percentage.
-    """
-
-    http_method_names = ["get", "post", "patch", "delete"]
-
-    queryset = SalesCollection.objects.select_related(
-        "sales_by", "customer"
-    ).prefetch_related(
-        "damage_items__product", "damage_items__price",
-        "free_items__product", "free_items__price"
-    ).all()
-    serializer_class = SalesCollectionSerializer
-    pagination_class = DefaultPagination
-    permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
-    search_fields = [
-        "sales_id",
-        "sales_by__username",
-        "sales_by__email",
-        "customer__name",
-        "customer__shop_name",
-    ]
-    filterset_fields = ["sales_by", "customer", "sales_date"]
-    ordering_fields = [
-        "sales_date",
-        "sales_id",
-        "total_sale",
-        "collection_amount",
-        "created_at",
-    ]
-    ordering = ["-sales_date", "-created_at"]
-
-    def destroy(self, request, *args, **kwargs):
-        """
-        Override destroy to handle ProtectedError and format it properly for drf_standardized_errors.
-        """
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except ProtectedError as e:
-            # Get the protected objects information
-            protected_objects = list(e.protected_objects)
-            if protected_objects:
-                model_name = protected_objects[0].__class__._meta.verbose_name_plural
-                raise ValidationError(
-                    {
-                        "detail": f"Cannot delete this sales collection because it is referenced by {len(protected_objects)} {model_name}."
-                    }
-                )
-            raise ValidationError(
-                {
-                    "detail": "Cannot delete this sales collection because it is referenced by other objects."
-                }
-            )
