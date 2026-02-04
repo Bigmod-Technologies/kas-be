@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import models
 from apps.core.models import BaseModel
 from apps.area.models import Area
@@ -36,6 +38,34 @@ class Customer(BaseModel):
     fridge_type = models.CharField(
         max_length=50, choices=CustomerType.choices, null=True, blank=True
     )
+
+    @property
+    def due_sell(self):
+        """Total due sell amount for this customer."""
+        from django.db import models as dj_models
+
+        return (
+            self.due_sells.aggregate(total=dj_models.Sum("amount"))["total"]
+            or Decimal("0.00")
+        )
+
+    @property
+    def due_collection(self):
+        """Total collected amount against due sells for this customer."""
+        from django.db import models as dj_models
+
+        return (
+            self.due_collections.aggregate(total=dj_models.Sum("amount"))["total"]
+            or Decimal("0.00")
+        )
+
+    @property
+    def balance(self):
+        """
+        Customer balance =
+        total due sell - (opening balance + total collection)
+        """
+        return self.due_sell - (self.opening_balance + self.due_collection)
 
     class Meta:
         verbose_name = "Customer"

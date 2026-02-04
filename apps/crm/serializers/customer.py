@@ -23,8 +23,19 @@ class CustomerSerializer(serializers.ModelSerializer):
             "order_discount_in_persentage",
             "have_special_discount",
             "special_discount_in_persentage",
+            "due_sell",
+            "due_collection",
+            "balance",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ("id", "area_details", "created_at", "updated_at")
+        read_only_fields = (
+            "id",
+            "area_details",
+            "due_sell",
+            "due_collection",
+            "balance",
+            "created_at",
+            "updated_at",
+        )
 

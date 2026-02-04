@@ -26,10 +26,14 @@ class OrderDelivery(BaseModel):
         related_name="orderorder_by",
         help_text="User who placed the order",
     )
-    total_amount = models.DecimalField(
-        max_digits=12, 
+    narration = models.TextField(
+        blank=True, null=True, help_text="Additional notes or narration for the order"
+    )
+    cash_sell_amount = models.DecimalField(
+        max_digits=12,
         decimal_places=2,
-        help_text="Total amount (can be negative for returns/refunds)"
+        default=0,
+        help_text="Cash sell amount for the order"
     )
 
     class Meta:
@@ -119,3 +123,104 @@ class OrderItem(BaseModel):
 
     def __str__(self):
         return f"{self.order.order_number} - {self.product.name} ({self.shift})"
+
+
+class DamageOrderItem(BaseModel):
+    """Model to represent damaged order items"""
+
+    order = models.ForeignKey(
+        OrderDelivery,
+        on_delete=models.CASCADE,
+        related_name="damage_items",
+        help_text="Order this damaged item belongs to",
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="damage_order_items",
+        help_text="Product in this damaged order item",
+    )
+    price = models.ForeignKey(
+        ProductPrice,
+        on_delete=models.PROTECT,
+        related_name="damage_order_items_by_price",
+        help_text="Price in this damaged order item",
+    )
+    quantity_in_ctn = models.IntegerField(
+        default=0, help_text="Damaged quantity in carton"
+    )
+    quantity_in_pcs = models.IntegerField(
+        default=0, help_text="Damaged quantity in pieces"
+    )
+    damage_reason = models.TextField(
+        blank=True, null=True, help_text="Reason for the damage"
+    )
+
+    class Meta:
+        verbose_name = "Damage Order Item"
+        verbose_name_plural = "Damage Order Items"
+        ordering = ["order", "product"]
+
+    @property
+    def total_amount(self):
+        """Calculate total amount of damaged items using the price field"""
+        if not self.price:
+            return Decimal("0.00")
+
+        total = Decimal("0.00")
+
+        # Calculate amount for damaged cartons
+        if self.price.ctn_price and self.quantity_in_ctn != 0:
+            total += Decimal(str(self.quantity_in_ctn)) * self.price.ctn_price
+
+        # Calculate amount for damaged pieces
+        if self.price.piece_price and self.quantity_in_pcs != 0:
+            total += Decimal(str(self.quantity_in_pcs)) * self.price.piece_price
+
+        return total
+
+    def __str__(self):
+        return f"{self.order.order_number} - {self.product.name} (Damage)"
+
+
+class FreeOfferItem(BaseModel):
+    """Model to represent free offer items"""
+
+    order = models.ForeignKey(
+        OrderDelivery,
+        on_delete=models.CASCADE,
+        related_name="free_offer_items",
+        help_text="Order this free offer item belongs to",
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        related_name="free_offer_order_items",
+        help_text="Product in this free offer item",
+    )
+    price = models.ForeignKey(
+        ProductPrice,
+        on_delete=models.PROTECT,
+        related_name="free_offer_order_items_by_price",
+        help_text="Price in this free offer item",
+    )
+    quantity_in_ctn = models.IntegerField(
+        default=0, help_text="Free offer quantity in carton"
+    )
+    quantity_in_pcs = models.IntegerField(
+        default=0, help_text="Free offer quantity in pieces"
+    )
+
+    class Meta:
+        verbose_name = "Free Offer Item"
+        verbose_name_plural = "Free Offer Items"
+        ordering = ["order", "product"]
+
+    @property
+    def total_amount(self):
+        """Calculate total amount of free offer items (should be 0 as it's free)"""
+        # Free offers have zero value
+        return Decimal("0.00")
+
+    def __str__(self):
+        return f"{self.order.order_number} - {self.product.name} (Free Offer)"

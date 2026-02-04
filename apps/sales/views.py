@@ -6,11 +6,12 @@ from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import ProtectedError
 
-from .models import OrderDelivery, OrderItem, SalesCollection
+from .models import OrderDelivery, OrderItem, DamageOrderItem, FreeOfferItem, DueSell, DueCollection
 from .serializers import (
     OrderDeliverySerializer,
     OrderNumberGenerateSerializer,
-    SalesCollectionSerializer,
+    DueSellSerializer,
+    DueCollectionSerializer,
 )
 from apps.core.utils import DefaultPagination
 
@@ -37,7 +38,9 @@ class OrderDeliveryViewSet(
     queryset = OrderDelivery.objects.select_related(
         "order_by"
     ).prefetch_related(
-        "items__product", "items__price"
+        "items__product", "items__price",
+        "damage_items__product", "damage_items__price",
+        "free_offer_items__product", "free_offer_items__price"
     ).all()
     serializer_class = OrderDeliverySerializer
     pagination_class = DefaultPagination
@@ -45,7 +48,7 @@ class OrderDeliveryViewSet(
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["order_number", "order_by__username", "order_by__email"]
     filterset_fields = ["order_by", "order_date"]
-    ordering_fields = ["order_date", "order_number", "total_amount", "created_at"]
+    ordering_fields = ["order_date", "order_number", "cash_sell_amount", "created_at"]
     ordering = ["-order_date", "-created_at"]
 
     def destroy(self, request, *args, **kwargs):
@@ -88,8 +91,8 @@ class OrderDeliveryViewSet(
         return Response(serializer.to_representation(None))
 
 
-@extend_schema(tags=["Sales Collections"])
-class SalesCollectionViewSet(
+@extend_schema(tags=["Due Sells"])
+class DueSellViewSet(
     mixins.CreateModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
@@ -97,58 +100,77 @@ class SalesCollectionViewSet(
     mixins.ListModelMixin,
     viewsets.GenericViewSet,
 ):
-    """
-    API endpoint that allows sales collections to be viewed or edited.
-    Auto-calculates: total_sale, commission_in_percentage, and special_discount_in_percentage.
-    """
+    """API endpoint to manage due sells."""
 
     http_method_names = ["get", "post", "patch", "delete"]
 
-    queryset = SalesCollection.objects.select_related(
-        "sales_by", "customer"
-    ).prefetch_related(
-        "damage_items__product", "damage_items__price",
-        "free_items__product", "free_items__price"
-    ).all()
-    serializer_class = SalesCollectionSerializer
+    queryset = (
+        DueSell.objects.select_related("customer", "deliver_by")
+        .all()
+    )
+    serializer_class = DueSellSerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = [
-        "sales_id",
-        "sales_by__username",
-        "sales_by__email",
         "customer__name",
         "customer__shop_name",
+        "deliver_by__username",
+        "deliver_by__first_name",
+        "deliver_by__last_name",
     ]
-    filterset_fields = ["sales_by", "customer", "sales_date"]
-    ordering_fields = [
-        "sales_date",
-        "sales_id",
-        "total_sale",
-        "collection_amount",
+    filterset_fields = [
+        "customer",
+        "deliver_by",
+        "sale_date",
         "created_at",
     ]
-    ordering = ["-sales_date", "-created_at"]
+    ordering_fields = [
+        "sale_date",
+        "amount",
+        "created_at",
+    ]
+    ordering = ["-sale_date", "-created_at"]
 
-    def destroy(self, request, *args, **kwargs):
-        """
-        Override destroy to handle ProtectedError and format it properly for drf_standardized_errors.
-        """
-        try:
-            return super().destroy(request, *args, **kwargs)
-        except ProtectedError as e:
-            # Get the protected objects information
-            protected_objects = list(e.protected_objects)
-            if protected_objects:
-                model_name = protected_objects[0].__class__._meta.verbose_name_plural
-                raise ValidationError(
-                    {
-                        "detail": f"Cannot delete this sales collection because it is referenced by {len(protected_objects)} {model_name}."
-                    }
-                )
-            raise ValidationError(
-                {
-                    "detail": "Cannot delete this sales collection because it is referenced by other objects."
-                }
-            )
+
+@extend_schema(tags=["Due Collections"])
+class DueCollectionViewSet(
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """API endpoint to manage due collections (payments)."""
+
+    http_method_names = ["get", "post", "patch", "delete"]
+
+    queryset = (
+        DueCollection.objects.select_related("customer", "collected_by")
+        .all()
+    )
+    serializer_class = DueCollectionSerializer
+    pagination_class = DefaultPagination
+    permission_classes = [IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    search_fields = [
+        "customer__name",
+        "customer__shop_name",
+        "collected_by__username",
+        "collected_by__first_name",
+        "collected_by__last_name",
+    ]
+    filterset_fields = [
+        "customer",
+        "collected_by",
+        "collection_date",
+        "created_at",
+    ]
+    ordering_fields = [
+        "collection_date",
+        "amount",
+        "created_at",
+    ]
+    ordering = ["-collection_date", "-created_at"]
+

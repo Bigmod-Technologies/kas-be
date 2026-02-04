@@ -3,7 +3,7 @@ from apps.core.models import BaseModel
 from apps.product.models import Product, ProductPrice
 from django.db.models import Sum
 from decimal import Decimal
-from apps.sales.models import OrderItem
+from apps.sales.models import OrderItem, DamageOrderItem, FreeOfferItem
 
 
 class StockType(BaseModel):
@@ -149,6 +149,22 @@ class StockTransaction(BaseModel):
         null=True,
         blank=True,
         help_text="Order item for this transaction",
+    )
+    damage_order_item = models.ForeignKey(
+        DamageOrderItem,
+        on_delete=models.CASCADE,
+        related_name="stock_transactions",
+        null=True,
+        blank=True,
+        help_text="Damage order item for this transaction",
+    )
+    free_offer_item = models.ForeignKey(
+        FreeOfferItem,
+        on_delete=models.CASCADE,
+        related_name="stock_transactions",
+        null=True,
+        blank=True,
+        help_text="Free offer item for this transaction",
     )
 
     @property
