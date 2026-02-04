@@ -115,7 +115,7 @@ class Command(BaseCommand):
                             "contact_number": owner_mobile_no,
                             "address": address,
                             "area": area,
-                            "fridge_type": "PDF" if outlet_df == 'PDF' else "ORD",
+                            "fridge_type": "PDF" if outlet_df == 'PDF' else "ODF",
                         },
                     )
                     
