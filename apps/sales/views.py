@@ -6,7 +6,7 @@ from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import ProtectedError
 
-from .models import OrderDelivery, OrderItem, SalesCollection
+from .models import OrderDelivery, OrderItem, DamageOrderItem, FreeOfferItem, SalesCollection
 from .serializers import (
     OrderDeliverySerializer,
     OrderNumberGenerateSerializer,
@@ -37,7 +37,9 @@ class OrderDeliveryViewSet(
     queryset = OrderDelivery.objects.select_related(
         "order_by"
     ).prefetch_related(
-        "items__product", "items__price"
+        "items__product", "items__price",
+        "damage_items__product", "damage_items__price",
+        "free_offer_items__product", "free_offer_items__price"
     ).all()
     serializer_class = OrderDeliverySerializer
     pagination_class = DefaultPagination
@@ -45,7 +47,7 @@ class OrderDeliveryViewSet(
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["order_number", "order_by__username", "order_by__email"]
     filterset_fields = ["order_by", "order_date"]
-    ordering_fields = ["order_date", "order_number", "total_amount", "created_at"]
+    ordering_fields = ["order_date", "order_number", "cash_sell_amount", "created_at"]
     ordering = ["-order_date", "-created_at"]
 
     def destroy(self, request, *args, **kwargs):
