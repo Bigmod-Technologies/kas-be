@@ -74,6 +74,7 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         "order_date",
         "order_by",
         "cash_sell_amount",
+        "priojon_offer",
         "items_count",
         "created_at",
     ]
@@ -116,6 +117,7 @@ class OrderDeliveryAdmin(admin.ModelAdmin):
         ("Financial", {
             "fields": (
                 "cash_sell_amount",
+                "priojon_offer",
             )
         }),
         ("Additional Information", {

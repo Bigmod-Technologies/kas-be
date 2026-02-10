@@ -35,6 +35,12 @@ class OrderDelivery(BaseModel):
         default=0,
         help_text="Cash sell amount for the order"
     )
+    priojon_offer = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text="Priojon offer amount for the order",
+    )
 
     class Meta:
         verbose_name = "Order Delivery"
@@ -218,9 +224,21 @@ class FreeOfferItem(BaseModel):
 
     @property
     def total_amount(self):
-        """Calculate total amount of free offer items (should be 0 as it's free)"""
-        # Free offers have zero value
-        return Decimal("0.00")
+        """Calculate notional total amount of free offer items using the price field"""
+        if not self.price:
+            return Decimal("0.00")
+
+        total = Decimal("0.00")
+
+        # Calculate amount for free offer cartons
+        if self.price.ctn_price and self.quantity_in_ctn != 0:
+            total += Decimal(str(self.quantity_in_ctn)) * self.price.ctn_price
+
+        # Calculate amount for free offer pieces
+        if self.price.piece_price and self.quantity_in_pcs != 0:
+            total += Decimal(str(self.quantity_in_pcs)) * self.price.piece_price
+
+        return total
 
     def __str__(self):
         return f"{self.order.order_number} - {self.product.name} (Free Offer)"
