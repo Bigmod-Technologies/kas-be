@@ -223,6 +223,7 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             "order_by",
             "order_by_details",
             "cash_sell_amount",
+            "priojon_offer",
             "narration",
             "items",
             "items_data",

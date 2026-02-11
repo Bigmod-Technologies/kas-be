@@ -47,8 +47,14 @@ class OrderDeliveryViewSet(
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["order_number", "order_by__username", "order_by__email"]
-    filterset_fields = ["order_by", "order_date"]
-    ordering_fields = ["order_date", "order_number", "cash_sell_amount", "created_at"]
+    filterset_fields = ["order_by", "order_date", "cash_sell_amount", "priojon_offer"]
+    ordering_fields = [
+        "order_date",
+        "order_number",
+        "cash_sell_amount",
+        "priojon_offer",
+        "created_at",
+    ]
     ordering = ["-order_date", "-created_at"]
 
     def destroy(self, request, *args, **kwargs):
