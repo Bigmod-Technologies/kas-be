@@ -11,6 +11,7 @@ from .serializers import (
     OrderDeliverySerializer,
     OrderNumberGenerateSerializer,
     DueSellSerializer,
+    DueSellBulkCreateSerializer,
     DueCollectionSerializer,
 )
 from apps.core.utils import DefaultPagination
@@ -111,7 +112,7 @@ class DueSellViewSet(
     http_method_names = ["get", "post", "patch", "delete"]
 
     queryset = (
-        DueSell.objects.select_related("customer", "deliver_by")
+        DueSell.objects.select_related("customer", "deliver_by", "order")
         .all()
     )
     serializer_class = DueSellSerializer
@@ -124,10 +125,12 @@ class DueSellViewSet(
         "deliver_by__username",
         "deliver_by__first_name",
         "deliver_by__last_name",
+        "order__order_number",
     ]
     filterset_fields = [
         "customer",
         "deliver_by",
+        "order",
         "sale_date",
         "created_at",
     ]
@@ -137,6 +140,47 @@ class DueSellViewSet(
         "created_at",
     ]
     ordering = ["-sale_date", "-created_at"]
+
+    @extend_schema(
+        summary="Bulk create due sells",
+        description="Create multiple due sell records in a single request",
+        request=DueSellBulkCreateSerializer,
+        responses={201: DueSellBulkCreateSerializer},
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        serializer_class=DueSellBulkCreateSerializer,
+        url_path="bulk-create",
+    )
+    def bulk_create(self, request):
+        """
+        Bulk create due sells.
+        Accepts a list of due sell records and creates them all at once.
+        
+        Request body format:
+        {
+            "due_sells": [
+                {
+                    "customer": "uuid",
+                    "deliver_by": "uuid",
+                    "order": "uuid",  # optional
+                    "sale_date": "YYYY-MM-DD",
+                    "amount": "decimal",
+                    "note": "string"  # optional
+                },
+                ...
+            ]
+        }
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        
+        return Response(
+            serializer.to_representation(result),
+            status=201
+        )
 
 
 @extend_schema(tags=["Due Collections"])

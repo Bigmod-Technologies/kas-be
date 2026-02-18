@@ -1,11 +1,11 @@
 from rest_framework import serializers
+
 from apps.inventory.models import StockTransaction, StockType
-from apps.product.serializers import ProductSerializer, ProductPriceSerializer
-# from apps.sales.serializers.order import OrderItemSerializer
+from apps.product.serializers import ProductPriceSerializer, ProductSerializer
 
 
 class StockTypeNestedSerializer(serializers.ModelSerializer):
-    """Nested serializer for stock type details"""
+    """Nested serializer for stock type details."""
 
     class Meta:
         model = StockType
@@ -13,12 +13,13 @@ class StockTypeNestedSerializer(serializers.ModelSerializer):
 
 
 class StockTransactionSerializer(serializers.ModelSerializer):
+    """Serializer for stock transactions with nested details."""
+
     stock_type_details = StockTypeNestedSerializer(read_only=True, source="stock_type")
     product_details = ProductSerializer(read_only=True, source="product")
     product_price_details = ProductPriceSerializer(
         read_only=True, source="product_price"
     )
-    # order_item_details = OrderItemSerializer(read_only=True, source="order_item")
     transfer_from_details = StockTypeNestedSerializer(
         read_only=True, source="transfer_from"
     )
@@ -43,7 +44,8 @@ class StockTransactionSerializer(serializers.ModelSerializer):
             "piece_price",
             "total_price",
             "order_item",
-            # "order_item_details",
+            "damage_order_item",
+            "free_offer_item",
             "have_transfer",
             "transfer_from",
             "transfer_from_details",
@@ -58,9 +60,7 @@ class StockTransactionSerializer(serializers.ModelSerializer):
             "id",
             "stock_type_details",
             "product_details",
-            "product_price",
             "product_price_details",
-            "order_item",
             "transfer_from_details",
             "transfer_to_details",
             "total_price",
@@ -69,7 +69,7 @@ class StockTransactionSerializer(serializers.ModelSerializer):
         )
 
     def validate(self, data):
-        """Validate transfer fields"""
+        """Validate transfer fields when have_transfer is True."""
         have_transfer = data.get("have_transfer", False)
         transfer_from = data.get("transfer_from")
         transfer_to = data.get("transfer_to")
@@ -84,9 +84,7 @@ class StockTransactionSerializer(serializers.ModelSerializer):
                     "transfer_from and transfer_to cannot be the same"
                 )
         else:
-            # Clear transfer fields if have_transfer is False
-            if transfer_from or transfer_to:
-                data["transfer_from"] = None
-                data["transfer_to"] = None
+            data["transfer_from"] = None
+            data["transfer_to"] = None
 
         return data

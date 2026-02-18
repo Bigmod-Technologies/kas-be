@@ -55,6 +55,26 @@ class OrderDelivery(BaseModel):
             self.order_number = generate_order_number()
         super().save(*args, **kwargs)
 
+    @property
+    def total_order_items(self):
+        """Total amount of all OrderItem for this order"""
+        return sum((item.total_amount for item in self.items.all()), Decimal("0.00"))
+
+    @property
+    def total_damage_items(self):
+        """Total amount of all DamageOrderItem for this order"""
+        return sum(
+            (item.total_amount for item in self.damage_items.all()), Decimal("0.00")
+        )
+
+    @property
+    def total_free_offer_items(self):
+        """Total amount of all FreeOfferItem for this order"""
+        return sum(
+            (item.total_amount for item in self.free_offer_items.all()),
+            Decimal("0.00"),
+        )
+
     def __str__(self):
         return f"Order {self.order_number} - {self.order_by.username}"
 
@@ -161,6 +181,12 @@ class DamageOrderItem(BaseModel):
     damage_reason = models.TextField(
         blank=True, null=True, help_text="Reason for the damage"
     )
+    inventory_damage_deduction_percent = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        default=0,
+        help_text="Inventory damage deduction as percentage (e.g., 10.50 for 10.5%)",
+    )
 
     class Meta:
         verbose_name = "Damage Order Item"
@@ -169,7 +195,7 @@ class DamageOrderItem(BaseModel):
 
     @property
     def total_amount(self):
-        """Calculate total amount of damaged items using the price field"""
+        """Calculate total amount of damaged items using the price field, after deduction percentage"""
         if not self.price:
             return Decimal("0.00")
 
@@ -182,6 +208,11 @@ class DamageOrderItem(BaseModel):
         # Calculate amount for damaged pieces
         if self.price.piece_price and self.quantity_in_pcs != 0:
             total += Decimal(str(self.quantity_in_pcs)) * self.price.piece_price
+
+        # Apply inventory damage deduction percentage
+        if self.inventory_damage_deduction_percent > 0:
+            deduction_factor = Decimal("1") - (self.inventory_damage_deduction_percent / Decimal("100"))
+            total = total * deduction_factor
 
         return total
 
