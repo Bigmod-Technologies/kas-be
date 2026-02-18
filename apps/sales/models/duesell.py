@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 
 from apps.core.models import BaseModel
 from apps.crm.models import Customer
+from apps.sales.models.order import OrderDelivery
 
 User = get_user_model()
 
@@ -23,6 +24,14 @@ class DueSell(BaseModel):
         on_delete=models.PROTECT,
         related_name="delivered_due_sells",
         help_text="User who delivered the goods",
+    )
+    order = models.ForeignKey(
+        OrderDelivery,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name="order_due_sells",
+        help_text="Order associated with this due sell",
     )
     sale_date = models.DateField(
         default=date.today,

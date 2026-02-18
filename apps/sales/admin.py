@@ -404,6 +404,7 @@ class DueSellAdmin(admin.ModelAdmin):
     """Admin interface for DueSell model."""
 
     list_display = [
+        "order",
         "customer",
         "deliver_by",
         "sale_date",
@@ -415,6 +416,7 @@ class DueSellAdmin(admin.ModelAdmin):
         "created_at",
         "deliver_by",
         "customer",
+        "order",
     ]
     search_fields = [
         "customer__name",
@@ -427,6 +429,7 @@ class DueSellAdmin(admin.ModelAdmin):
         "updated_at",
     ]
     raw_id_fields = [
+        "order",
         "customer",
         "deliver_by",
     ]

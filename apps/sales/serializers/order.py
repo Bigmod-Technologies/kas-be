@@ -1,19 +1,24 @@
 from rest_framework import serializers
-from decimal import Decimal
 from apps.sales.models import OrderDelivery, OrderItem, DamageOrderItem, FreeOfferItem
 from apps.product.serializers import ProductSerializer, ProductPriceSerializer
 from apps.user.serializers.staff import UserSerializer
 from apps.sales.utils import generate_order_number
 
 
-class OrderItemSerializer(serializers.ModelSerializer):
-    """Serializer for OrderItem (nested in OrderDelivery)"""
+class OrderItemReadMixin(serializers.Serializer):
+    """Mixin for shared read-only fields in order item serializers."""
 
     product_name = serializers.CharField(read_only=True, source="product.name")
     product_sku = serializers.CharField(read_only=True, source="product.sku")
     product_details = ProductSerializer(read_only=True, source="product")
     price_details = ProductPriceSerializer(read_only=True, source="price")
-    total_amount = serializers.SerializerMethodField()
+    total_amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, read_only=True
+    )
+
+
+class OrderItemSerializer(OrderItemReadMixin, serializers.ModelSerializer):
+    """Serializer for OrderItem (nested in OrderDelivery)."""
 
     class Meta:
         model = OrderItem
@@ -46,27 +51,6 @@ class OrderItemSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-
-    def get_total_amount(self, obj):
-        """Calculate total amount for this order item"""
-        if not obj.price:
-            return Decimal("0.00")
-
-        total = Decimal("0.00")
-
-        # Calculate net quantity (quantity + advanced - return)
-        net_ctn = obj.quantity_in_ctn + obj.advanced_in_ctn - obj.return_in_ctn
-        net_pcs = obj.quantity_in_pcs + obj.advanced_in_pcs - obj.return_in_pcs
-
-        # Calculate amount for cartons (handles both positive and negative net quantities)
-        if obj.price.ctn_price and net_ctn != 0:
-            total += Decimal(str(net_ctn)) * obj.price.ctn_price
-
-        # Calculate amount for pieces (handles both positive and negative net quantities)
-        if obj.price.piece_price and net_pcs != 0:
-            total += Decimal(str(net_pcs)) * obj.price.piece_price
-
-        return total
 
 
 class OrderItemWriteSerializer(serializers.ModelSerializer):
@@ -87,14 +71,8 @@ class OrderItemWriteSerializer(serializers.ModelSerializer):
         ]
 
 
-class DamageOrderItemSerializer(serializers.ModelSerializer):
-    """Serializer for DamageOrderItem (nested in OrderDelivery)"""
-
-    product_name = serializers.CharField(read_only=True, source="product.name")
-    product_sku = serializers.CharField(read_only=True, source="product.sku")
-    product_details = ProductSerializer(read_only=True, source="product")
-    price_details = ProductPriceSerializer(read_only=True, source="price")
-    total_amount = serializers.SerializerMethodField()
+class DamageOrderItemSerializer(OrderItemReadMixin, serializers.ModelSerializer):
+    """Serializer for DamageOrderItem (nested in OrderDelivery)."""
 
     class Meta:
         model = DamageOrderItem
@@ -109,6 +87,7 @@ class DamageOrderItemSerializer(serializers.ModelSerializer):
             "quantity_in_ctn",
             "quantity_in_pcs",
             "damage_reason",
+            "inventory_damage_deduction_percent",
             "total_amount",
             "created_at",
             "updated_at",
@@ -124,10 +103,6 @@ class DamageOrderItemSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
-    def get_total_amount(self, obj):
-        """Calculate total amount for this damage order item"""
-        return obj.total_amount
-
 
 class DamageOrderItemWriteSerializer(serializers.ModelSerializer):
     """Serializer for writing DamageOrderItem data (nested in OrderDelivery)"""
@@ -140,17 +115,12 @@ class DamageOrderItemWriteSerializer(serializers.ModelSerializer):
             "quantity_in_ctn",
             "quantity_in_pcs",
             "damage_reason",
+            "inventory_damage_deduction_percent",
         ]
 
 
-class FreeOfferItemSerializer(serializers.ModelSerializer):
-    """Serializer for FreeOfferItem (nested in OrderDelivery)"""
-
-    product_name = serializers.CharField(read_only=True, source="product.name")
-    product_sku = serializers.CharField(read_only=True, source="product.sku")
-    product_details = ProductSerializer(read_only=True, source="product")
-    price_details = ProductPriceSerializer(read_only=True, source="price")
-    total_amount = serializers.SerializerMethodField()
+class FreeOfferItemSerializer(OrderItemReadMixin, serializers.ModelSerializer):
+    """Serializer for FreeOfferItem (nested in OrderDelivery)."""
 
     class Meta:
         model = FreeOfferItem
@@ -178,10 +148,6 @@ class FreeOfferItemSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-
-    def get_total_amount(self, obj):
-        """Calculate total amount for this free offer item (always 0)"""
-        return obj.total_amount
 
 
 class FreeOfferItemWriteSerializer(serializers.ModelSerializer):
@@ -201,6 +167,15 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
     """Serializer for OrderDelivery with nested items"""
 
     order_by_details = UserSerializer(read_only=True, source="order_by")
+    total_order_items = serializers.DecimalField(
+        max_digits=12, decimal_places=2, read_only=True
+    )
+    total_damage_items = serializers.DecimalField(
+        max_digits=12, decimal_places=2, read_only=True
+    )
+    total_free_offer_items = serializers.DecimalField(
+        max_digits=12, decimal_places=2, read_only=True
+    )
     items = OrderItemSerializer(many=True, read_only=True)
     items_data = OrderItemWriteSerializer(
         many=True, write_only=True, required=False, allow_null=True
@@ -224,6 +199,9 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             "order_by_details",
             "cash_sell_amount",
             "priojon_offer",
+            "total_order_items",
+            "total_damage_items",
+            "total_free_offer_items",
             "narration",
             "items",
             "items_data",
@@ -238,6 +216,9 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             "id",
             "order_number",
             "order_by_details",
+            "total_order_items",
+            "total_damage_items",
+            "total_free_offer_items",
             "items",
             "damage_items",
             "free_offer_items",
@@ -251,7 +232,6 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
         damage_items_data = attrs.get("damage_items_data", []) or []
         free_offer_items_data = attrs.get("free_offer_items_data", []) or []
 
-        # Validate that at least one type of item is provided for create
         if not self.instance and not items_data and not damage_items_data and not free_offer_items_data:
             raise serializers.ValidationError(
                 {
@@ -261,27 +241,23 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
 
         return attrs
 
+    def _process_items(self, order, items_data, damage_items_data, free_offer_items_data):
+        """Create order items. For update, pass empty lists to skip that item type."""
+        for item_data in items_data:
+            OrderItem.objects.create(order=order, **item_data)
+        for item_data in damage_items_data:
+            DamageOrderItem.objects.create(order=order, **item_data)
+        for item_data in free_offer_items_data:
+            FreeOfferItem.objects.create(order=order, **item_data)
+
     def create(self, validated_data):
         """Create order with items"""
         items_data = validated_data.pop("items_data", []) or []
         damage_items_data = validated_data.pop("damage_items_data", []) or []
         free_offer_items_data = validated_data.pop("free_offer_items_data", []) or []
 
-        # Create the order
         order = OrderDelivery.objects.create(**validated_data)
-
-        # Process regular items
-        for item_data in items_data:
-            OrderItem.objects.create(order=order, **item_data)
-
-        # Process damage items
-        for item_data in damage_items_data:
-            DamageOrderItem.objects.create(order=order, **item_data)
-
-        # Process free offer items
-        for item_data in free_offer_items_data:
-            FreeOfferItem.objects.create(order=order, **item_data)
-
+        self._process_items(order, items_data, damage_items_data, free_offer_items_data)
         return order
 
     def update(self, instance, validated_data):
@@ -290,9 +266,7 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
         damage_items_data = validated_data.pop("damage_items_data", None)
         free_offer_items_data = validated_data.pop("free_offer_items_data", None)
 
-        # If any items_data is provided, update items
         if items_data is not None or damage_items_data is not None or free_offer_items_data is not None:
-            # Delete existing items if updating
             if items_data is not None:
                 instance.items.all().delete()
             if damage_items_data is not None:
@@ -300,27 +274,17 @@ class OrderDeliverySerializer(serializers.ModelSerializer):
             if free_offer_items_data is not None:
                 instance.free_offer_items.all().delete()
 
-            # Process regular items
-            if items_data is not None:
-                for item_data in items_data:
-                    OrderItem.objects.create(order=instance, **item_data)
+            self._process_items(
+                instance,
+                items_data or [],
+                damage_items_data or [],
+                free_offer_items_data or [],
+            )
 
-            # Process damage items
-            if damage_items_data is not None:
-                for item_data in damage_items_data:
-                    DamageOrderItem.objects.create(order=instance, **item_data)
-
-            # Process free offer items
-            if free_offer_items_data is not None:
-                for item_data in free_offer_items_data:
-                    FreeOfferItem.objects.create(order=instance, **item_data)
-
-        # Update order fields
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
 
         instance.save()
-
         return instance
 
 
