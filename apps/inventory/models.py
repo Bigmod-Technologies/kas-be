@@ -175,12 +175,11 @@ class StockTransaction(BaseModel):
         return ctn_total + piece_total
 
     def save(self, *args, **kwargs):
-        """Override save to automatically set product_price from product if not provided"""
-        # Only set product_price if it's not already set and product exists
-        if not self.product_price and self.product:
-            latest_price = self.product.latest_product_price
-            if latest_price:
-                self.product_price = latest_price
+        """Set product_price from product's latest price when not provided."""
+        if not self.product_price_id and self.product_id:
+            latest = getattr(self.product, "latest_product_price", None)
+            if latest:
+                self.product_price = latest
         super().save(*args, **kwargs)
 
     class Meta:

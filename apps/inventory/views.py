@@ -53,7 +53,14 @@ class StockTransactionViewSet(
     http_method_names = ["get", "post", "patch", "delete"]
 
     queryset = StockTransaction.objects.select_related(
-        "stock_type", "product", "product_price", "order_item", "transfer_from", "transfer_to"
+        "stock_type",
+        "product",
+        "product_price",
+        "order_item",
+        "damage_order_item",
+        "free_offer_item",
+        "transfer_from",
+        "transfer_to",
     ).all()
     serializer_class = StockTransactionSerializer
     pagination_class = DefaultPagination
