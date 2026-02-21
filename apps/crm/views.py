@@ -37,10 +37,10 @@ class CustomerViewSet(
         "contact_number",
         "address",
     ]
-    filterset_fields = [
-        "area",
-        "fridge_type",
-        "have_special_discount",
-    ]
+    filterset_fields = {
+        "area": ["exact","in"],
+        "fridge_type": ["exact"],
+        "have_special_discount": ["exact"],
+    }
     ordering_fields = ["name", "shop_name", "created_at"]
     ordering = ["name"]
