@@ -34,6 +34,7 @@ class CustomerViewSet(
         "customer_id",
         "name",
         "shop_name",
+        "shop_name_en",
         "contact_number",
         "address",
     ]

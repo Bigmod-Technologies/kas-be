@@ -8,6 +8,7 @@ class CustomerAdmin(admin.ModelAdmin):
         'customer_id',
         'name',
         'shop_name',
+        'shop_name_en',
         'contact_number',
         'area',
         'fridge_type',

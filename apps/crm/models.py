@@ -15,6 +15,7 @@ class Customer(BaseModel):
 
     name = models.CharField(max_length=255)
     shop_name = models.CharField(max_length=255)
+    shop_name_en = models.CharField(max_length=255, null=True, blank=True)
     contact_number = models.CharField(max_length=50, null=True, blank=True)
     address = models.TextField(null=True, blank=True)
     opening_balance = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
