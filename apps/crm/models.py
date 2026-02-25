@@ -66,7 +66,7 @@ class Customer(BaseModel):
         Customer balance =
         total due sell - (opening balance + total collection)
         """
-        return self.due_sell - (self.opening_balance + self.due_collection)
+        return (self.opening_balance + self.due_collection) - self.due_sell
 
     class Meta:
         verbose_name = "Customer"
