@@ -75,6 +75,7 @@ class CustomerViewSet(
             "address",
             "area_name",  # flattened from area_details.name
             "due_limit",
+            "opening_balance",
             "due_sell",
             "due_collection",
             "balance",
