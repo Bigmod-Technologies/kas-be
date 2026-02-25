@@ -63,10 +63,36 @@ class ProductSerializer(serializers.ModelSerializer):
             "free_qty",
             "price",
             "prices",
+            "total_regular_stock_ctn_quantity",
+            "total_regular_stock_piece_quantity",
+            "total_main_stock_ctn_quantity",
+            "total_main_stock_piece_quantity",
+            "total_free_stock_ctn_quantity",
+            "total_free_stock_piece_quantity",
+            "total_damage_stock_ctn_quantity",
+            "total_damage_stock_piece_quantity",
+            "total_advance_stock_ctn_quantity",
+            "total_advance_stock_piece_quantity",
             "created_at",
             "updated_at",
         ]
-        read_only_fields = ("id", "brand_details", "prices", "created_at", "updated_at")
+        read_only_fields = (
+            "id",
+            "brand_details",
+            "prices",
+            "total_regular_stock_ctn_quantity",
+            "total_regular_stock_piece_quantity",
+            "total_main_stock_ctn_quantity",
+            "total_main_stock_piece_quantity",
+            "total_free_stock_ctn_quantity",
+            "total_free_stock_piece_quantity",
+            "total_damage_stock_ctn_quantity",
+            "total_damage_stock_piece_quantity",
+            "total_advance_stock_ctn_quantity",
+            "total_advance_stock_piece_quantity",
+            "created_at",
+            "updated_at",
+        )
 
     def create(self, validated_data):
         """Create product and automatically create associated price if provided"""
@@ -118,6 +144,7 @@ class SkuGenerateSerializer(serializers.Serializer):
     Serializer for generating unique SKU numbers.
     Uses the generate_sku utility function for SKU generation logic.
     """
+
     sku = serializers.CharField(read_only=True)
 
     def to_representation(self, instance):

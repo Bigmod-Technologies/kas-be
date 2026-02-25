@@ -30,7 +30,7 @@ class Product(BaseModel):
         return self.prices.filter(is_latest=True, price_for="PRODUCT").first()
 
     @property
-    def total_ctn_quantity(self) -> int:
+    def total_regular_stock_ctn_quantity(self) -> int:
         """Calculate total carton quantity: sum of IN transactions minus sum of OUT transactions"""
         result = self.stock_transactions.filter(stock_type__name="Regular Stock").aggregate(
             in_total=Sum(
@@ -53,7 +53,7 @@ class Product(BaseModel):
         return in_total - out_total
 
     @property
-    def total_piece_quantity(self) -> int:
+    def total_regular_stock_piece_quantity(self) -> int:
         """Calculate total piece quantity: sum of IN transactions minus sum of OUT transactions"""
         result = self.stock_transactions.filter(stock_type__name="Regular Stock").aggregate(
             in_total=Sum(
@@ -74,6 +74,187 @@ class Product(BaseModel):
         in_total = result["in_total"] or 0
         out_total = result["out_total"] or 0
         return in_total - out_total
-    
 
+    @property
+    def total_main_stock_ctn_quantity(self) -> int:
+        """Calculate total carton quantity: sum of IN transactions minus sum of OUT transactions"""
+        result = self.stock_transactions.filter(stock_type__name="Main Stock").aggregate(
+            in_total=Sum(
+                Case(
+                    When(transaction_type="IN", then="ctn_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            out_total=Sum(
+                Case(
+                    When(transaction_type="OUT", then="ctn_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+        in_total = result["in_total"] or 0
+        out_total = result["out_total"] or 0
+        return in_total - out_total
 
+    @property
+    def total_main_stock_piece_quantity(self) -> int:
+        """Calculate total piece quantity: sum of IN transactions minus sum of OUT transactions"""
+        result = self.stock_transactions.filter(stock_type__name="Main Stock").aggregate(
+            in_total=Sum(
+                Case(
+                    When(transaction_type="IN", then="piece_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            out_total=Sum(
+                Case(
+                    When(transaction_type="OUT", then="piece_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+        in_total = result["in_total"] or 0
+        out_total = result["out_total"] or 0
+        return in_total - out_total
+
+    @property
+    def total_free_stock_ctn_quantity(self) -> int:
+        """Calculate total carton quantity: sum of IN transactions minus sum of OUT transactions"""
+        result = self.stock_transactions.filter(stock_type__name="Free Stock").aggregate(
+            in_total=Sum(
+                Case(
+                    When(transaction_type="IN", then="ctn_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            out_total=Sum(
+                Case(
+                    When(transaction_type="OUT", then="ctn_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+        in_total = result["in_total"] or 0
+        out_total = result["out_total"] or 0
+        return in_total - out_total
+
+    @property
+    def total_free_stock_piece_quantity(self) -> int:
+        """Calculate total piece quantity: sum of IN transactions minus sum of OUT transactions"""
+        result = self.stock_transactions.filter(stock_type__name="Free Stock").aggregate(
+            in_total=Sum(
+                Case(
+                    When(transaction_type="IN", then="piece_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            out_total=Sum(
+                Case(
+                    When(transaction_type="OUT", then="piece_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+        in_total = result["in_total"] or 0
+        out_total = result["out_total"] or 0
+        return in_total - out_total
+
+    @property
+    def total_damage_stock_ctn_quantity(self) -> int:
+        """Calculate total carton quantity: sum of IN transactions minus sum of OUT transactions"""
+        result = self.stock_transactions.filter(stock_type__name="Damage Stock").aggregate(
+            in_total=Sum(
+                Case(
+                    When(transaction_type="IN", then="ctn_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            out_total=Sum(
+                Case(
+                    When(transaction_type="OUT", then="ctn_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+        in_total = result["in_total"] or 0
+        out_total = result["out_total"] or 0
+        return in_total - out_total
+
+    @property
+    def total_damage_stock_piece_quantity(self) -> int:
+        """Calculate total piece quantity: sum of IN transactions minus sum of OUT transactions"""
+        result = self.stock_transactions.filter(stock_type__name="Damage Stock").aggregate(
+            in_total=Sum(
+                Case(
+                    When(transaction_type="IN", then="piece_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            out_total=Sum(
+                Case(
+                    When(transaction_type="OUT", then="piece_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+        in_total = result["in_total"] or 0
+        out_total = result["out_total"] or 0
+        return in_total - out_total
+
+    @property
+    def total_advance_stock_ctn_quantity(self) -> int:
+        """Calculate total carton quantity: sum of IN transactions minus sum of OUT transactions"""
+        result = self.stock_transactions.filter(stock_type__name="Advance Stock").aggregate(
+            in_total=Sum(
+                Case(
+                    When(transaction_type="IN", then="ctn_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            out_total=Sum(
+                Case(
+                    When(transaction_type="OUT", then="ctn_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+        in_total = result["in_total"] or 0
+        out_total = result["out_total"] or 0
+        return in_total - out_total
+
+    @property
+    def total_advance_stock_piece_quantity(self) -> int:
+        """Calculate total piece quantity: sum of IN transactions minus sum of OUT transactions"""
+        result = self.stock_transactions.filter(stock_type__name="Advance Stock").aggregate(
+            in_total=Sum(
+                Case(
+                    When(transaction_type="IN", then="piece_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+            out_total=Sum(
+                Case(
+                    When(transaction_type="OUT", then="piece_quantity"),
+                    default=0,
+                    output_field=IntegerField(),
+                )
+            ),
+        )
+        in_total = result["in_total"] or 0
+        out_total = result["out_total"] or 0
+        return in_total - out_total
