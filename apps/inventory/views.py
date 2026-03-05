@@ -1,9 +1,14 @@
-from rest_framework import viewsets, mixins, filters
+from rest_framework import viewsets, mixins, filters, views
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import StockType, StockTransaction
-from .serializers import StockTypeSerializer, StockTransactionSerializer
+from .serializers import (
+    StockTypeSerializer,
+    StockTypeReportSerializer,
+    StockTransactionSerializer,
+)
 from apps.core.utils import DefaultPagination
 
 # utils
@@ -35,6 +40,20 @@ class StockTypeViewSet(
     ordering_fields = ["name", "created_at"]
     ordering = ["name"]
 
+
+@extend_schema(tags=["Stock Reports"])
+class StockTypeReportView(views.APIView):
+    """
+    Report API: list all stock types with total carton and piece quantities.
+    """
+
+    permission_classes = [IsAuthenticated]
+    serializer_class = StockTypeReportSerializer
+
+    def get(self, request):
+        queryset = StockType.objects.all().order_by("name")
+        serializer = self.serializer_class(queryset, many=True)
+        return Response(serializer.data)
 
 @extend_schema(tags=["Stock Transactions"])
 class StockTransactionViewSet(
