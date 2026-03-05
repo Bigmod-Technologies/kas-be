@@ -6,7 +6,14 @@ from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import ProtectedError
 
-from .models import OrderDelivery, OrderItem, DamageOrderItem, FreeOfferItem, DueSell, DueCollection
+from .models import (
+    OrderDelivery,
+    OrderItem,
+    DamageOrderItem,
+    FreeOfferItem,
+    DueSell,
+    DueCollection,
+)
 from .serializers import (
     OrderDeliverySerializer,
     OrderNumberGenerateSerializer,
@@ -36,24 +43,34 @@ class OrderDeliveryViewSet(
 
     http_method_names = ["get", "post", "patch", "delete"]
 
-    queryset = OrderDelivery.objects.select_related(
-        "order_by"
-    ).prefetch_related(
-        "items__product", "items__price",
-        "damage_items__product", "damage_items__price",
-        "free_offer_items__product", "free_offer_items__price"
-    ).all()
+    queryset = (
+        OrderDelivery.objects.select_related("order_by")
+        .prefetch_related(
+            "items__product",
+            "items__price",
+            "damage_items__product",
+            "damage_items__price",
+            "free_offer_items__product",
+            "free_offer_items__price",
+        )
+        .all()
+    )
     serializer_class = OrderDeliverySerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     search_fields = ["order_number", "order_by__username", "order_by__email"]
-    filterset_fields = ["order_by", "order_date", "cash_sell_amount", "priojon_offer"]
+    filterset_fields = {
+        "order_by": ["exact"],
+        "order_date": ["exact", "gte", "lte"],
+    }
     ordering_fields = [
         "order_date",
         "order_number",
-        "cash_sell_amount",
-        "priojon_offer",
         "created_at",
     ]
     ordering = ["-order_date", "-created_at"]
@@ -75,7 +92,9 @@ class OrderDeliveryViewSet(
                     }
                 )
             raise ValidationError(
-                {"detail": "Cannot delete this order because it is referenced by other objects."}
+                {
+                    "detail": "Cannot delete this order because it is referenced by other objects."
+                }
             )
 
     @extend_schema(
@@ -111,14 +130,15 @@ class DueSellViewSet(
 
     http_method_names = ["get", "post", "patch", "delete"]
 
-    queryset = (
-        DueSell.objects.select_related("customer", "deliver_by", "order")
-        .all()
-    )
+    queryset = DueSell.objects.select_related("customer", "deliver_by", "order").all()
     serializer_class = DueSellSerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     search_fields = [
         "customer__name",
         "customer__shop_name",
@@ -127,13 +147,12 @@ class DueSellViewSet(
         "deliver_by__last_name",
         "order__order_number",
     ]
-    filterset_fields = [
-        "customer",
-        "deliver_by",
-        "order",
-        "sale_date",
-        "created_at",
-    ]
+    filterset_fields = {
+        "customer": ["exact"],
+        "deliver_by": ["exact"],
+        "sale_date": ["exact", "gte", "lte"],
+    }
+
     ordering_fields = [
         "sale_date",
         "amount",
@@ -157,7 +176,7 @@ class DueSellViewSet(
         """
         Bulk create due sells.
         Accepts a list of due sell records and creates them all at once.
-        
+
         Request body format:
         {
             "due_sells": [
@@ -176,11 +195,8 @@ class DueSellViewSet(
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         result = serializer.save()
-        
-        return Response(
-            serializer.to_representation(result),
-            status=201
-        )
+
+        return Response(serializer.to_representation(result), status=201)
 
 
 @extend_schema(tags=["Due Collections"])
@@ -196,14 +212,15 @@ class DueCollectionViewSet(
 
     http_method_names = ["get", "post", "patch", "delete"]
 
-    queryset = (
-        DueCollection.objects.select_related("customer", "collected_by")
-        .all()
-    )
+    queryset = DueCollection.objects.select_related("customer", "collected_by").all()
     serializer_class = DueCollectionSerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    filter_backends = [
+        DjangoFilterBackend,
+        filters.SearchFilter,
+        filters.OrderingFilter,
+    ]
     search_fields = [
         "customer__name",
         "customer__shop_name",
@@ -211,16 +228,13 @@ class DueCollectionViewSet(
         "collected_by__first_name",
         "collected_by__last_name",
     ]
-    filterset_fields = [
-        "customer",
-        "collected_by",
-        "collection_date",
-        "created_at",
-    ]
+    filterset_fields = {
+        "customer": ["exact"],
+        "collected_by": ["exact"],
+        "collection_date": ["exact", "gte", "lte"],
+    }
     ordering_fields = [
         "collection_date",
         "amount",
-        "created_at",
     ]
     ordering = ["-collection_date", "-created_at"]
-
