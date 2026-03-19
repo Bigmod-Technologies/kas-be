@@ -10,6 +10,17 @@ from apps.sales.models.order import OrderDelivery
 User = get_user_model()
 
 
+class DueSellQuerySet(models.QuerySet):
+    """Custom queryset for DueSell with total amount calculation."""
+
+    def total_amount(self):
+        """Return the sum of amount for this queryset. Returns 0 if no records."""
+        from django.db.models import Sum
+
+        result = self.aggregate(total=Sum("amount"))["total"]
+        return result if result is not None else 0
+
+
 class DueSell(BaseModel):
     """Model to represent due sells for customers."""
 
@@ -47,6 +58,8 @@ class DueSell(BaseModel):
         null=True,
         help_text="Additional notes about this due sell",
     )
+
+    objects = DueSellQuerySet.as_manager()
 
     class Meta:
         verbose_name = "Due Sell"

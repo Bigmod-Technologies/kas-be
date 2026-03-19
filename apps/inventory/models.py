@@ -1,7 +1,7 @@
 from django.db import models
 from apps.core.models import BaseModel
 from apps.product.models import Product, ProductPrice
-from django.db.models import Sum
+from django.db.models import Sum, F, ExpressionWrapper
 from decimal import Decimal
 from apps.sales.models import OrderItem, DamageOrderItem, FreeOfferItem
 
@@ -57,6 +57,27 @@ class StockType(BaseModel):
             or 0
         )
 
+        return in_total - out_total
+
+    @property
+    def total_price(self) -> Decimal:
+        """Total value: sum of (ctn_price*ctn_quantity + piece_price*piece_quantity) for IN minus OUT."""
+        value_expr = ExpressionWrapper(
+            F("ctn_price") * F("ctn_quantity") + F("piece_price") * F("piece_quantity"),
+            output_field=models.DecimalField(max_digits=14, decimal_places=2),
+        )
+        in_total = (
+            self.transactions.filter(transaction_type="IN").aggregate(
+                total=Sum(value_expr)
+            )["total"]
+            or Decimal("0")
+        )
+        out_total = (
+            self.transactions.filter(transaction_type="OUT").aggregate(
+                total=Sum(value_expr)
+            )["total"]
+            or Decimal("0")
+        )
         return in_total - out_total
 
 

@@ -5,7 +5,17 @@ from django.contrib.auth.models import User, Group
 from django.contrib.auth.password_validation import validate_password
 from apps.user.models import Profile
 from apps.area.models import Area
-
+from decimal import Decimal
+from django.db.models import Sum, F, ExpressionWrapper, DecimalField, Value
+from django.db.models.functions import Coalesce
+from apps.sales.models.duesell import DueSell
+from apps.sales.models.collection import DueCollection
+from apps.sales.models.order import (
+    OrderDelivery,
+    OrderItem,
+    DamageOrderItem,
+    FreeOfferItem,
+)
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -238,3 +248,184 @@ class StaffSerializer(serializers.ModelSerializer):
             representation["groups"] = representation.pop("groups_display")
 
         return representation
+
+
+class DeliveryPersonSerializer(StaffSerializer):
+    """
+    Serializer for delivery persons with totals (read-only).
+    Optional query params date_from and date_to limit all calculations to that range.
+    """
+
+    total_due_sell_amount = serializers.SerializerMethodField()
+    total_due_collection_amount = serializers.SerializerMethodField()
+    total_cash_sell_amount = serializers.SerializerMethodField()
+    total_priojon_offer = serializers.SerializerMethodField()
+    total_order_item_amount = serializers.SerializerMethodField()
+    total_damage_amount = serializers.SerializerMethodField()
+    total_free_offer_amount = serializers.SerializerMethodField()
+
+    class Meta(StaffSerializer.Meta):
+        fields = StaffSerializer.Meta.fields + [
+            "total_due_sell_amount",
+            "total_due_collection_amount",
+            "total_cash_sell_amount",
+            "total_priojon_offer",
+            "total_order_item_amount",
+            "total_damage_amount",
+            "total_free_offer_amount",
+        ]
+        read_only_fields = list(StaffSerializer.Meta.read_only_fields) + [
+            "total_due_sell_amount",
+            "total_due_collection_amount",
+            "total_cash_sell_amount",
+            "total_priojon_offer",
+            "total_order_item_amount",
+            "total_damage_amount",
+            "total_free_offer_amount",
+        ]
+
+    def _get_date_range(self):
+        """Return (date_from, date_to) from request query params if present."""
+        request = self.context.get("request")
+        if not request:
+            return None, None
+        return (
+            request.query_params.get("date_from"),
+            request.query_params.get("date_to"),
+        )
+
+    def get_total_due_sell_amount(self, obj) -> Decimal:
+        qs = DueSell.objects.filter(deliver_by=obj)
+        date_from, date_to = self._get_date_range()
+        if date_from:
+            qs = qs.filter(sale_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(sale_date__lte=date_to)
+        result = qs.aggregate(total=Sum("amount"))["total"]
+        return result if result is not None else Decimal("0.00")
+
+    def get_total_due_collection_amount(self, obj) -> Decimal:
+        qs = DueCollection.objects.filter(collected_by=obj)
+        date_from, date_to = self._get_date_range()
+        if date_from:
+            qs = qs.filter(collection_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(collection_date__lte=date_to)
+        result = qs.aggregate(total=Sum("amount"))["total"]
+        return result if result is not None else Decimal("0.00")
+
+    def get_total_cash_sell_amount(self, obj) -> Decimal:
+        qs = OrderDelivery.objects.filter(order_by=obj)
+        date_from, date_to = self._get_date_range()
+        if date_from:
+            qs = qs.filter(order_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(order_date__lte=date_to)
+        result = qs.aggregate(total=Sum("cash_sell_amount"))["total"]
+        return result if result is not None else Decimal("0.00")
+
+    def get_total_priojon_offer(self, obj) -> Decimal:
+        qs = OrderDelivery.objects.filter(order_by=obj)
+        date_from, date_to = self._get_date_range()
+        if date_from:
+            qs = qs.filter(order_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(order_date__lte=date_to)
+        result = qs.aggregate(total=Sum("priojon_offer"))["total"]
+        return result if result is not None else Decimal("0.00")
+
+    def get_total_order_item_amount(self, obj) -> Decimal:
+        """
+        Sum of OrderItem.total_amount for orders placed by this user (order_by).
+        Uses the same date_from/date_to range, applied to OrderDelivery.order_date.
+        """
+        qs = OrderItem.objects.filter(order__order_by=obj)
+        date_from, date_to = self._get_date_range()
+        if date_from:
+            qs = qs.filter(order__order_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(order__order_date__lte=date_to)
+
+        total_expr = ExpressionWrapper(
+            (
+                (F("quantity_in_ctn") + F("advanced_in_ctn") - F("return_in_ctn"))
+                * Coalesce(F("price__ctn_price"), Value(Decimal("0.00")))
+                + (F("quantity_in_pcs") + F("advanced_in_pcs") - F("return_in_pcs"))
+                * Coalesce(F("price__piece_price"), Value(Decimal("0.00")))
+            ),
+            output_field=DecimalField(max_digits=18, decimal_places=2),
+        )
+
+        result = qs.aggregate(
+            total=Coalesce(Sum(total_expr), Value(Decimal("0.00")))
+        )["total"]
+        return result if result is not None else Decimal("0.00")
+
+    def get_total_damage_amount(self, obj) -> Decimal:
+        """
+        Sum of DamageOrderItem.total_amount for orders placed by this user (order_by),
+        using the same formula as DamageOrderItem.total_amount but computed in the DB.
+        Uses the same date_from/date_to range, applied to OrderDelivery.order_date.
+        """
+        qs = DamageOrderItem.objects.filter(order__order_by=obj)
+        # Match `if not self.price: return 0` guard
+        qs = qs.filter(price__isnull=False)
+
+        date_from, date_to = self._get_date_range()
+        if date_from:
+            qs = qs.filter(order__order_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(order__order_date__lte=date_to)
+
+        base_total_expr = (
+            Coalesce(F("price__ctn_price"), Value(Decimal("0.00")))
+            * Coalesce(F("quantity_in_ctn"), Value(0))
+            + Coalesce(F("price__piece_price"), Value(Decimal("0.00")))
+            * Coalesce(F("quantity_in_pcs"), Value(0))
+        )
+
+        deduction_factor = (
+            Value(Decimal("1.00"))
+            - (Coalesce(F("inventory_damage_deduction_percent"), Value(Decimal("0.00"))) / Value(Decimal("100.00")))
+        )
+
+        total_expr = ExpressionWrapper(
+            base_total_expr * deduction_factor,
+            output_field=DecimalField(max_digits=18, decimal_places=2),
+        )
+
+        result = qs.aggregate(
+            total=Coalesce(Sum(total_expr), Value(Decimal("0.00")))
+        )["total"]
+        return result if result is not None else Decimal("0.00")
+
+    def get_total_free_offer_amount(self, obj) -> Decimal:
+        """
+        Sum of FreeOfferItem.total_amount for orders placed by this user (order_by),
+        using the same formula as FreeOfferItem.total_amount but computed in the DB.
+        Uses the same date_from/date_to range, applied to OrderDelivery.order_date.
+        """
+        qs = FreeOfferItem.objects.filter(order__order_by=obj)
+        # Match `if not self.price: return 0` guard
+        qs = qs.filter(price__isnull=False)
+
+        date_from, date_to = self._get_date_range()
+        if date_from:
+            qs = qs.filter(order__order_date__gte=date_from)
+        if date_to:
+            qs = qs.filter(order__order_date__lte=date_to)
+
+        total_expr = ExpressionWrapper(
+            (
+                Coalesce(F("price__ctn_price"), Value(Decimal("0.00")))
+                * Coalesce(F("quantity_in_ctn"), Value(0))
+                + Coalesce(F("price__piece_price"), Value(Decimal("0.00")))
+                * Coalesce(F("quantity_in_pcs"), Value(0))
+            ),
+            output_field=DecimalField(max_digits=18, decimal_places=2),
+        )
+
+        result = qs.aggregate(
+            total=Coalesce(Sum(total_expr), Value(Decimal("0.00")))
+        )["total"]
+        return result if result is not None else Decimal("0.00")
