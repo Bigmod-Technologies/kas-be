@@ -18,7 +18,6 @@ class OrderItemInline(admin.TabularInline):
     fields = [
         "product",
         "price",
-        "shift",
         ("quantity_in_ctn", "quantity_in_pcs"),
         ("advanced_in_ctn", "advanced_in_pcs"),
         ("return_in_ctn", "return_in_pcs"),
@@ -155,7 +154,6 @@ class OrderItemAdmin(admin.ModelAdmin):
     list_display = [
         "order",
         "product",
-        "shift",
         "quantity_display",
         "advanced_display",
         "damaged_display",
@@ -168,11 +166,7 @@ class OrderItemAdmin(admin.ModelAdmin):
         "product__name",
         "product__sku",
     ]
-    list_filter = [
-        "shift",
-        "order__order_date",
-        "created_at",
-    ]
+    list_filter = ["order__order_date", "created_at"]
     readonly_fields = [
         "id",
         "total_amount",
@@ -193,7 +187,6 @@ class OrderItemAdmin(admin.ModelAdmin):
             "fields": (
                 "product",
                 "price",
-                "shift",
             )
         }),
         ("Quantities", {

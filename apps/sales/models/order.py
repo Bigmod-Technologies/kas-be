@@ -8,11 +8,6 @@ from apps.product.models import Product, ProductPrice
 User = get_user_model()
 
 
-class Shift(models.TextChoices):
-    MORNING = "MORNING", "MORNING"
-    EVENING = "EVENING", "EVENING"
-
-
 class OrderDelivery(BaseModel):
     """Model to represent order deliveries"""
 
@@ -100,11 +95,6 @@ class OrderItem(BaseModel):
         related_name="order_items_by_price",
         help_text="Price in this order item",
     )
-    shift = models.CharField(
-        max_length=50,
-        choices=Shift.choices,
-        help_text="Shift: M (Morning) or E (Evening)",
-    )
     quantity_in_ctn = models.IntegerField(default=0, help_text="Quantity in carton")
     quantity_in_pcs = models.IntegerField(default=0, help_text="Quantity in pieces")
     advanced_in_ctn = models.IntegerField(
@@ -148,7 +138,7 @@ class OrderItem(BaseModel):
         return total
 
     def __str__(self):
-        return f"{self.order.order_number} - {self.product.name} ({self.shift})"
+        return f"{self.order.order_number} - {self.product.name}"
 
 
 class DamageOrderItem(BaseModel):

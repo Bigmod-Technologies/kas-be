@@ -30,7 +30,6 @@ class OrderItemSerializer(OrderItemReadMixin, serializers.ModelSerializer):
             "product_details",
             "price",
             "price_details",
-            "shift",
             "quantity_in_ctn",
             "quantity_in_pcs",
             "advanced_in_ctn",
@@ -61,7 +60,6 @@ class OrderItemWriteSerializer(serializers.ModelSerializer):
         fields = [
             "product",
             "price",
-            "shift",
             "quantity_in_ctn",
             "quantity_in_pcs",
             "advanced_in_ctn",
