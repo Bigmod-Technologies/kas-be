@@ -51,10 +51,10 @@ class CustomerViewSet(
     ordering_fields = ["name", "shop_name", "created_at"]
     ordering = ["name"]
 
-    # def get_permissions(self):
-    #     if self.action == "download_excel":
-    #         return [AllowAny()]
-    #     return [IsAuthenticated()]
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAuthenticated()]
 
     @extend_schema(
         summary="Download customers as Excel (CSV)",
