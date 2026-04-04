@@ -1,7 +1,7 @@
 from rest_framework import viewsets, mixins, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
 from .models import Zone, Area, WorkingDay
@@ -73,6 +73,11 @@ class AreaViewSet(
     ]
     ordering_fields = ["name", "route_number", "created_at"]
     ordering = ["name"]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return super().get_permissions()
 
     @action(
         detail=False,
