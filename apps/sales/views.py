@@ -20,6 +20,7 @@ from .serializers import (
     DueSellSerializer,
     DueSellBulkCreateSerializer,
     DueCollectionSerializer,
+    DueCollectionBulkCreateSerializer,
 )
 from apps.core.utils import DefaultPagination
 
@@ -238,3 +239,38 @@ class DueCollectionViewSet(
         "amount",
     ]
     ordering = ["-collection_date", "-created_at"]
+
+    @extend_schema(
+        summary="Bulk create due collections",
+        description="Create multiple due collection (payment) records in a single request",
+        request=DueCollectionBulkCreateSerializer,
+        responses={201: DueCollectionBulkCreateSerializer},
+    )
+    @action(
+        detail=False,
+        methods=["post"],
+        serializer_class=DueCollectionBulkCreateSerializer,
+        url_path="bulk-create",
+    )
+    def bulk_create(self, request):
+        """
+        Bulk create due collections.
+
+        Request body:
+        {
+            "due_collections": [
+                {
+                    "customer": "uuid",
+                    "collected_by": "uuid",
+                    "collection_date": "YYYY-MM-DD",
+                    "amount": "decimal",
+                    "note": "string"  # optional
+                },
+                ...
+            ]
+        }
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        return Response(serializer.to_representation(result), status=201)

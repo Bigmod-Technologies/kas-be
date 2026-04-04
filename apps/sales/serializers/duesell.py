@@ -129,3 +129,37 @@ class DueCollectionSerializer(serializers.ModelSerializer):
         ]
 
 
+class DueCollectionWriteSerializer(serializers.ModelSerializer):
+    """Write serializer for DueCollection (used in bulk operations)."""
+
+    class Meta:
+        model = DueCollection
+        fields = [
+            "customer",
+            "collected_by",
+            "collection_date",
+            "amount",
+            "note",
+        ]
+
+
+class DueCollectionBulkCreateSerializer(serializers.Serializer):
+    """Serializer for bulk creating DueCollection records."""
+
+    due_collections = DueCollectionWriteSerializer(many=True)
+
+    def create(self, validated_data):
+        due_collections_data = validated_data.pop("due_collections")
+        created = []
+        for row in due_collections_data:
+            created.append(DueCollection.objects.create(**row))
+        return {"due_collections": created}
+
+    def to_representation(self, instance):
+        return {
+            "due_collections": DueCollectionSerializer(
+                instance["due_collections"], many=True
+            ).data
+        }
+
+
