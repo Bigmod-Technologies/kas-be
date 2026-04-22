@@ -83,7 +83,7 @@ class ProductViewSet(
 
     http_method_names = ["get", "post", "patch", "delete"]
 
-    queryset = Product.objects.all()
+    queryset = Product.objects.all().order_by("sku")
     serializer_class = ProductSerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
