@@ -92,10 +92,10 @@ class ProductViewSet(
     filterset_fields = ["status", "brand", "have_offer"]
 
     ordering_fields = ["name"]
-    ordering = ["-sku"]
+    ordering = ["sku"]
 
     def get_queryset(self):
-        return super().get_queryset().order_by("-sku")
+        return super().get_queryset().order_by("sku")
 
     def destroy(self, request, *args, **kwargs):
         """
