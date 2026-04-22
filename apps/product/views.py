@@ -92,7 +92,7 @@ class ProductViewSet(
     filterset_fields = ["status", "brand", "have_offer"]
 
     ordering_fields = ["name"]
-    ordering = ["-name"]
+    ordering = ["sku"]
 
     def destroy(self, request, *args, **kwargs):
         """
