@@ -83,7 +83,7 @@ class ProductViewSet(
 
     http_method_names = ["get", "post", "patch", "delete"]
 
-    queryset = Product.objects.all().order_by("sku")
+    queryset = Product.objects.all().order_by("-sku")
     serializer_class = ProductSerializer
     pagination_class = DefaultPagination
     permission_classes = [IsAuthenticated]
@@ -92,7 +92,7 @@ class ProductViewSet(
     filterset_fields = ["status", "brand", "have_offer"]
 
     ordering_fields = ["name"]
-    ordering = ["sku"]
+    ordering = ["-sku"]
 
     def destroy(self, request, *args, **kwargs):
         """
