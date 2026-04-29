@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.db.models import CharField, F, Sum, UUIDField, Value
 from django.shortcuts import get_object_or_404
+from django.db.models.functions import Concat
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 
@@ -98,7 +99,12 @@ class CustomerDueReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             .annotate(
                 entry_type=Value("due_sell", output_field=CharField()),
                 entry_date=F("sale_date"),
-                performed_by=F(f"{F('deliver_by__first_name')} {F('deliver_by__last_name')}"),
+                performed_by=Concat(
+                    F("deliver_by__first_name"),
+                    Value(" "),
+                    F("deliver_by__last_name"),
+                    output_field=CharField(),
+                ),
                 order_number=F("order__order_number"),
             )
             .values(
@@ -119,7 +125,12 @@ class CustomerDueReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             .annotate(
                 entry_type=Value("due_collection", output_field=CharField()),
                 entry_date=F("collection_date"),
-                performed_by=F(f"{F('collected_by__first_name')} {F('collected_by__last_name')}"),
+                performed_by=Concat(
+                    F("collected_by__first_name"),
+                    Value(" "),
+                    F("collected_by__last_name"),
+                    output_field=CharField(),
+                ),
                 order_id=Value(None, output_field=UUIDField()),
                 order_number=Value(None, output_field=CharField()),
             )
