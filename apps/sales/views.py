@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db.models import ProtectedError
+from django.db.models import Prefetch
 
 from .models import (
     OrderDelivery,
@@ -47,8 +48,12 @@ class OrderDeliveryViewSet(
     queryset = (
         OrderDelivery.objects.select_related("order_by")
         .prefetch_related(
-            "items__product",
-            "items__price",
+            Prefetch(
+                "items",
+                queryset=OrderItem.objects.select_related("product", "price").order_by(
+                    "product__sku"
+                ),
+            ),
             "damage_items__product",
             "damage_items__price",
             "free_offer_items__product",
