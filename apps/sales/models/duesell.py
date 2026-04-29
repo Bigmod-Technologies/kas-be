@@ -65,6 +65,9 @@ class DueSell(BaseModel):
         verbose_name = "Due Sell"
         verbose_name_plural = "Due Sells"
         ordering = ["-sale_date", "-created_at"]
+        indexes = [
+            models.Index(fields=["customer", "-sale_date", "-created_at"]),
+        ]
 
     def __str__(self):
         return f"DueSell {self.customer.name} - {self.amount}"

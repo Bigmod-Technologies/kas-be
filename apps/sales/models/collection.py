@@ -43,6 +43,9 @@ class DueCollection(BaseModel):
         verbose_name = "Due Collection"
         verbose_name_plural = "Due Collections"
         ordering = ["-collection_date", "-created_at"]
+        indexes = [
+            models.Index(fields=["customer", "-collection_date", "-created_at"]),
+        ]
 
     def __str__(self):
         return f"DueCollection {self.customer.name} - {self.amount}"

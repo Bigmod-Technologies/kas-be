@@ -7,8 +7,8 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 
-from .models import Customer
-from .serializers import CustomerSerializer
+from apps.crm.models import Customer
+from apps.crm.serializers import CustomerSerializer
 from apps.core.utils import DefaultPagination
 
 # utils
