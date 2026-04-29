@@ -98,7 +98,7 @@ class CustomerDueReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             .annotate(
                 entry_type=Value("due_sell", output_field=CharField()),
                 entry_date=F("sale_date"),
-                performed_by=F("deliver_by__username"),
+                performed_by=F(f"{F('deliver_by__first_name')} {F('deliver_by__last_name')}"),
                 order_number=F("order__order_number"),
             )
             .values(
@@ -119,7 +119,7 @@ class CustomerDueReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
             .annotate(
                 entry_type=Value("due_collection", output_field=CharField()),
                 entry_date=F("collection_date"),
-                performed_by=F("collected_by__username"),
+                performed_by=F(f"{F('collected_by__first_name')} {F('collected_by__last_name')}"),
                 order_id=Value(None, output_field=UUIDField()),
                 order_number=Value(None, output_field=CharField()),
             )
