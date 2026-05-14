@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
+from .filters import StockTransactionFilter
 from .models import StockType, StockTransaction
 from .serializers import (
     StockTypeSerializer,
@@ -67,6 +68,9 @@ class StockTransactionViewSet(
     """
     API endpoint that allows stock transactions to be viewed or edited.
     Supports creating transactions with IN/OUT types and transfers.
+
+    Date range (inclusive, on ``created_at`` date in the server timezone):
+    ``?date_from=YYYY-MM-DD`` and/or ``?date_to=YYYY-MM-DD``.
     """
 
     http_method_names = ["get", "post", "patch", "delete"]
@@ -91,14 +95,6 @@ class StockTransactionViewSet(
         "stock_type__name",
         "note",
     ]
-    filterset_fields = [
-        "transaction_type",
-        "have_transfer",
-        "stock_type",
-        "stock_type__name",
-        "product",
-        "product_price",
-        "order_item",
-    ]
+    filterset_class = StockTransactionFilter
     ordering_fields = ["created_at", "transaction_type"]
     ordering = ["-created_at"]
