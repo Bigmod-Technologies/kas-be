@@ -36,7 +36,7 @@ class CustomerAdmin(admin.ModelAdmin):
     readonly_fields = ['created_at', 'updated_at']
     fieldsets = (
         ('Customer Information', {
-            'fields': ('customer_id', 'name', 'shop_name', 'contact_number', 'address', 'fridge_type')
+            'fields': ('customer_id', 'name', 'shop_name_en', 'shop_name', 'contact_number', 'address', 'fridge_type')
         }),
         ('Location', {
             'fields': ('area',)
