@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import ProtectedError
+from django.db.models import ProtectedError, Sum
 from django.db.models import Prefetch
 
 from .models import (
@@ -166,6 +166,26 @@ class DueSellViewSet(
     ]
     ordering = ["-sale_date", "-created_at"]
 
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        total_amount = queryset.total_amount()
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            paginated_response = self.get_paginated_response(serializer.data)
+            paginated_response.data["total_amount"] = total_amount
+            return paginated_response
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                "count": len(serializer.data),
+                "total_amount": total_amount,
+                "results": serializer.data,
+            }
+        )
+
     @extend_schema(
         summary="Bulk create due sells",
         description="Create multiple due sell records in a single request",
@@ -244,6 +264,26 @@ class DueCollectionViewSet(
         "amount",
     ]
     ordering = ["-collection_date", "-created_at"]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        total_amount = queryset.aggregate(total=Sum("amount"))["total"] or 0
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            paginated_response = self.get_paginated_response(serializer.data)
+            paginated_response.data["total_amount"] = total_amount
+            return paginated_response
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                "count": len(serializer.data),
+                "total_amount": total_amount,
+                "results": serializer.data,
+            }
+        )
 
     @extend_schema(
         summary="Bulk create due collections",

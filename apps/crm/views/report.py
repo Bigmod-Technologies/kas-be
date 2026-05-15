@@ -367,7 +367,7 @@ class CustomerDueReportViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """
 
     http_method_names = ["get"]
-    permission_classes = [IsAuthenticated]
+    # permission_classes = [IsAuthenticated]
     pagination_class = DefaultPagination
     queryset = Customer.objects.none()
     serializer_class = CustomerDueReportItemSerializer
